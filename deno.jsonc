@@ -1,0 +1,10 @@
+{
+  "imports": {
+    "std/": "https://deno.land/std@0.196.0/"
+  },
+  "tasks": {
+    "test": "deno test -A",
+    "run": "deno run -A cli.ts run",
+    "compile": "deno compile -A --output bin/ergomatic cli.ts"
+  }
+}
