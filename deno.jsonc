@@ -1,10 +1,12 @@
 {
   "imports": {
-    "std/": "https://deno.land/std@0.196.0/"
+    "std/": "https://deno.land/std@0.196.0/",
+    "zod": "https://deno.land/x/zod@v3.21.4/mod.ts",
+    "lodash.merge": "https://cdn.skypack.dev/lodash.merge@4.6.2?dts"
   },
   "tasks": {
     "test": "deno test -A",
-    "run": "deno run -A cli.ts run",
-    "compile": "deno compile -A --output bin/ergomatic cli.ts"
+    "run": "deno run -A src/cli.ts run",
+    "compile": "deno compile -A --output bin/ergomatic src/cli.ts"
   }
 }
