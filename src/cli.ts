@@ -45,7 +45,7 @@ async function getConfig(configPath: string) {
 }
 
 async function runHandler({ config }: RunArgs) {
-  const userConfig = await getConfig(config) as PartialErgomaticConfig;
+  const _userConfig = await getConfig(config) as PartialErgomaticConfig;
 
   // create `Ergomatic` class instance & run
   // call `Ergomatic` shutdown func on SIGINT/deno `unload` event
