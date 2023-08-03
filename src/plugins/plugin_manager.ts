@@ -1,13 +1,9 @@
 import { Logger } from "std/log/mod.ts";
-import { Plugin, PluginConstructor } from "./plugin.ts";
+import { Plugin } from "./plugin.ts";
 import { ErgomaticConfig, PluginConfigEntry } from "../config.ts";
 import { createLogger } from "../log.ts";
 import { ErgomaticConfigError } from "../error.ts";
-import { EXAMPLE_PLUGIN_ID, ExamplePlugin } from "../../plugins/mod.ts";
-
-const pluginIdToConstructorMap: Record<string, PluginConstructor> = {
-  [EXAMPLE_PLUGIN_ID]: ExamplePlugin,
-};
+import { pluginConstructorMap } from "../../plugins/mod.ts";
 
 export class PluginManager {
   private readonly logger: Logger;
@@ -37,7 +33,7 @@ export class PluginManager {
     config: ErgomaticConfig,
     pluginEntry: PluginConfigEntry,
   ): Plugin {
-    const pluginCtor = pluginIdToConstructorMap[pluginEntry.id];
+    const pluginCtor = pluginConstructorMap[pluginEntry.id];
 
     if (!pluginCtor) {
       throw new ErgomaticConfigError(`Unknown plugin ID: '${pluginEntry.id}'`);
