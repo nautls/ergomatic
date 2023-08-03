@@ -11,18 +11,17 @@ export interface PluginDescriptor {
   get version(): string;
 }
 
-type PluginConfig = Record<string, unknown>;
-
 export type PluginConstructor = {
   new (args: PluginArgs): Plugin;
 };
 
-export interface PluginArgs<T extends PluginConfig = PluginConfig> {
+// deno-lint-ignore no-explicit-any
+export interface PluginArgs<T = any> {
   config: T;
   logger: Logger;
 }
 
-export abstract class Plugin<T extends PluginConfig = PluginConfig> {
+export abstract class Plugin<T = unknown> {
   /** Plugin specific configuration provided in the ergomatic config file. */
   protected readonly config: T;
 
@@ -34,11 +33,19 @@ export abstract class Plugin<T extends PluginConfig = PluginConfig> {
     this.logger = logger;
   }
 
-  onCreated(): Promise<void> {
+  /**
+   * Called on start-up of ergomatic.
+   * Plugin initialization should be done here.
+   */
+  onStart(): Promise<void> {
     return Promise.resolve();
   }
 
-  onDestroyed(): Promise<void> {
+  /**
+   * Called on shutdown of ergomatic.
+   * Plugin clean-up should be done here.
+   */
+  onStop(): Promise<void> {
     return Promise.resolve();
   }
 

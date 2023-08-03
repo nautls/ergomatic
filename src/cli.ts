@@ -1,7 +1,13 @@
 import yargs from "yargs";
 import * as yaml from "std/yaml/mod.ts";
-import { PartialErgomaticConfig } from "./config.ts";
+import {
+  mergeUserConfigAndValidate,
+  PartialErgomaticConfig,
+} from "./config.ts";
 import version from "./version.ts";
+import { Ergomatic } from "./ergomatic.ts";
+
+let _ergomatic: Ergomatic | undefined;
 
 interface RunArgs {
   /**
@@ -45,11 +51,19 @@ async function getConfig(configPath: string) {
 }
 
 async function runHandler({ config }: RunArgs) {
-  const _userConfig = await getConfig(config) as PartialErgomaticConfig;
+  const userConfig = await getConfig(config) as PartialErgomaticConfig;
+  const ergomaticConfig = mergeUserConfigAndValidate(userConfig);
 
-  // create `Ergomatic` class instance & run
-  // call `Ergomatic` shutdown func on SIGINT/deno `unload` event
+  _ergomatic = new Ergomatic(ergomaticConfig);
+  _ergomatic.run();
 }
+
+async function onExit() {
+  await _ergomatic?.stop();
+}
+
+globalThis.addEventListener("unload", onExit);
+Deno.addSignalListener("SIGINT", onExit);
 
 /**
  * Setting `scriptName` is required to show correct CLI name in `yargs` output.
