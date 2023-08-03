@@ -1,13 +1,16 @@
 import { z } from "zod";
 import merge from "lodash.merge";
 
-const pluginConfigSchema = z.object({
+const pluginConfigEntrySchema = z.object({
   id: z.string(),
   enabled: z.boolean(),
   config: z.object({}).optional(),
 });
 
+export type PluginConfigEntry = z.infer<typeof pluginConfigEntrySchema>;
+
 const ergomaticConfigSchema = z.object({
+  logLevel: z.enum(["NOTSET", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
   node: z.object({
     endpoint: z.string().url(),
   }),
@@ -18,10 +21,10 @@ const ergomaticConfigSchema = z.object({
   indexer: z.object({
     endpoint: z.string().url(),
   }).optional(),
-  plugins: z.array(pluginConfigSchema).min(1),
+  plugins: z.array(pluginConfigEntrySchema).min(1),
 });
 
-type ErgomaticConfig = z.infer<typeof ergomaticConfigSchema>;
+export type ErgomaticConfig = z.infer<typeof ergomaticConfigSchema>;
 
 const partialErgomaticConfigSchema = ergomaticConfigSchema.partial();
 
@@ -31,6 +34,7 @@ export type PartialErgomaticConfig = z.infer<
 
 /** Defaults to mainnet configuration values. */
 const DEFAULT_ERGOMATIC_CONFIG: PartialErgomaticConfig = {
+  logLevel: "INFO",
   node: {
     /**
      * Bootstrap mainnet node taken from:
