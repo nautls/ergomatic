@@ -16,8 +16,8 @@ export class PluginManager {
   constructor(config: ErgomaticConfig) {
     this.logger = createLogger("PluginManager", config.logLevel);
 
-    this.plugins = config.plugins.filter((p) => p.enabled).map((pluginConfig) =>
-      this.#createPlugin(config, pluginConfig)
+    this.plugins = config.plugins.filter((p) => p.enabled).map((pluginEntry) =>
+      this.#createPlugin(config, pluginEntry)
     );
   }
 
