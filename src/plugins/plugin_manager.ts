@@ -4,29 +4,87 @@ import { ErgomaticConfig, PluginConfigEntry } from "../config.ts";
 import { createLogger } from "../log.ts";
 import { ErgomaticConfigError } from "../error.ts";
 import { pluginConstructorMap } from "../../plugins/mod.ts";
+import { EventEmitter } from "../event_emitter.ts";
 
-export class PluginManager {
+interface PluginManagerEvent {
+  "plugin:error": CustomEvent<{ plugin: Plugin; error: Error }>;
+}
+
+enum PluginState {
+  Stopped,
+  Running,
+  Error,
+}
+
+interface ManagedPlugin {
+  plugin: Plugin;
+  state: PluginState;
+}
+
+export class PluginManager extends EventEmitter<PluginManagerEvent> {
   private readonly logger: Logger;
-  private readonly plugins: Plugin[];
+  #plugins: ManagedPlugin[];
 
   constructor(config: ErgomaticConfig) {
-    this.logger = createLogger("PluginManager", config.logLevel);
+    super();
 
-    this.plugins = config.plugins.filter((p) => p.enabled).map((pluginEntry) =>
-      this.#createPlugin(config, pluginEntry)
+    this.logger = createLogger("PluginManager", config.logLevel);
+    this.#plugins = config.plugins.filter((p) => p.enabled).map((
+      pluginEntry,
+    ) => ({
+      plugin: this.#createPlugin(config, pluginEntry),
+      state: PluginState.Stopped,
+    }));
+  }
+
+  public async start(): Promise<void> {
+    this.logger.debug("Starting plugins");
+
+    const promises = this.#pluginsByState(PluginState.Stopped).map(async (
+      managedPlugin,
+    ) => {
+      try {
+        await managedPlugin.plugin.onStart();
+
+        managedPlugin.state = PluginState.Running;
+      } catch (e) {
+        this.#handlePluginError(managedPlugin, e);
+      }
+    });
+
+    await Promise.allSettled(promises);
+  }
+
+  public async stop(): Promise<void> {
+    this.logger.debug("Stopping plugins");
+
+    const promises = this.#pluginsByState(PluginState.Running).map(async (
+      managedPlugin,
+    ) => {
+      try {
+        await managedPlugin.plugin.onStop();
+
+        managedPlugin.state = PluginState.Stopped;
+      } catch (e) {
+        this.#handlePluginError(managedPlugin, e);
+      }
+    });
+
+    await Promise.allSettled(promises);
+  }
+
+  #handlePluginError(managedPlugin: ManagedPlugin, error: Error): void {
+    managedPlugin.state = PluginState.Error;
+
+    this.dispatchEvent(
+      new CustomEvent("plugin:error", {
+        detail: { plugin: managedPlugin.plugin, error },
+      }),
     );
   }
 
-  public start(): Promise<void> {
-    this.logger.debug("Starting plugins");
-
-    return Promise.resolve();
-  }
-
-  public stop(): Promise<void> {
-    this.logger.debug("Stopping plugins");
-
-    return Promise.resolve();
+  #pluginsByState(state: PluginState): ManagedPlugin[] {
+    return this.#plugins.filter((p) => p.state === state);
   }
 
   #createPlugin(
@@ -35,13 +93,13 @@ export class PluginManager {
   ): Plugin {
     const pluginCtor = pluginConstructorMap[pluginEntry.id];
 
-    if (!pluginCtor) {
-      throw new ErgomaticConfigError(`Unknown plugin ID: '${pluginEntry.id}'`);
-    }
-
     this.logger.debug(
       `Creating plugin from config: ${JSON.stringify(pluginEntry)}`,
     );
+
+    if (!pluginCtor) {
+      throw new ErgomaticConfigError(`Unknown plugin ID: '${pluginEntry.id}'`);
+    }
 
     return new pluginCtor({
       config,
