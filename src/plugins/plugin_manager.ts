@@ -21,6 +21,15 @@ interface ManagedPlugin {
   state: PluginState;
 }
 
+export const _internals = {
+  getPluginsByState(
+    plugins: ManagedPlugin[],
+    state: PluginState,
+  ): ManagedPlugin[] {
+    return plugins.filter((p) => p.state === state);
+  },
+};
+
 export class PluginManager extends EventEmitter<PluginManagerEvent> {
   private readonly logger: Logger;
   readonly #pluginConstructorMap: Record<string, PluginConstructor>;
@@ -86,7 +95,7 @@ export class PluginManager extends EventEmitter<PluginManagerEvent> {
   }
 
   #pluginsByState(state: PluginState): ManagedPlugin[] {
-    return this.#plugins.filter((p) => p.state === state);
+    return _internals.getPluginsByState(this.#plugins, state);
   }
 
   #createPlugin(
