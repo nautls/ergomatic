@@ -1,5 +1,5 @@
 import { Logger } from "std/log/mod.ts";
-import { Plugin } from "./plugin.ts";
+import { Plugin, PluginConstructor } from "./plugin.ts";
 import { ErgomaticConfig, PluginConfigEntry } from "../config.ts";
 import { createLogger } from "../log.ts";
 import { ErgomaticConfigError } from "../error.ts";
@@ -23,12 +23,14 @@ interface ManagedPlugin {
 
 export class PluginManager extends EventEmitter<PluginManagerEvent> {
   private readonly logger: Logger;
+  readonly #pluginConstructorMap: Record<string, PluginConstructor>;
   #plugins: ManagedPlugin[];
 
-  constructor(config: ErgomaticConfig) {
+  constructor(config: ErgomaticConfig, pluginCtorMap = pluginConstructorMap) {
     super();
 
     this.logger = createLogger("PluginManager", config.logLevel);
+    this.#pluginConstructorMap = pluginCtorMap;
     this.#plugins = config.plugins.filter((p) => p.enabled).map((
       pluginEntry,
     ) => ({
@@ -91,7 +93,7 @@ export class PluginManager extends EventEmitter<PluginManagerEvent> {
     config: ErgomaticConfig,
     pluginEntry: PluginConfigEntry,
   ): Plugin {
-    const pluginCtor = pluginConstructorMap[pluginEntry.id];
+    const pluginCtor = this.#pluginConstructorMap[pluginEntry.id];
 
     this.logger.debug(
       `Creating plugin from config: ${JSON.stringify(pluginEntry)}`,
