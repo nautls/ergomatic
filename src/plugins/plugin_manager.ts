@@ -21,26 +21,24 @@ interface ManagedPlugin {
   state: PluginState;
 }
 
+/** Provide a way to mock internal class details in unit tests. */
 export const _internals = {
-  getPluginsByState(
-    plugins: ManagedPlugin[],
-    state: PluginState,
-  ): ManagedPlugin[] {
-    return plugins.filter((p) => p.state === state);
+  plugins(plugins: ManagedPlugin[]): ManagedPlugin[] {
+    return plugins;
   },
 };
 
 export class PluginManager extends EventEmitter<PluginManagerEvent> {
   private readonly logger: Logger;
   readonly #pluginConstructorMap: Record<string, PluginConstructor>;
-  #plugins: ManagedPlugin[];
+  #_plugins: ManagedPlugin[];
 
   constructor(config: ErgomaticConfig, pluginCtorMap = pluginConstructorMap) {
     super();
 
     this.logger = createLogger("PluginManager", config.logLevel);
     this.#pluginConstructorMap = pluginCtorMap;
-    this.#plugins = config.plugins.filter((p) => p.enabled).map((
+    this.#_plugins = config.plugins.filter((p) => p.enabled).map((
       pluginEntry,
     ) => ({
       plugin: this.#createPlugin(config, pluginEntry),
@@ -95,7 +93,11 @@ export class PluginManager extends EventEmitter<PluginManagerEvent> {
   }
 
   #pluginsByState(state: PluginState): ManagedPlugin[] {
-    return _internals.getPluginsByState(this.#plugins, state);
+    return this.#plugins.filter((p) => p.state === state);
+  }
+
+  get #plugins(): ManagedPlugin[] {
+    return _internals.plugins(this.#_plugins);
   }
 
   #createPlugin(

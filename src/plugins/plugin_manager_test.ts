@@ -99,6 +99,10 @@ describe("PluginManager", () => {
         onStartStub.restore();
       }
     });
-    // add test to ensure its only called on plugins that are stopped
+    it("should only call onStart for stopped plugins", async () => {
+      const pluginManager = new PluginManager(config, testMap);
+
+      await pluginManager.start();
+    });
   });
 });
