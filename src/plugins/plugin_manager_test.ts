@@ -1,4 +1,4 @@
-import { assert, assertEquals, assertThrows } from "std/testing/asserts.ts";
+import { assertEquals, assertThrows } from "std/testing/asserts.ts";
 import { spy, stub } from "std/testing/mock.ts";
 import { beforeEach, describe, it } from "std/testing/bdd.ts";
 import { ErgomaticConfig } from "../config.ts";
@@ -9,7 +9,6 @@ import {
   mkManagedPlugin,
   mkPluginManager,
   testConfig,
-  TestPlugin,
   testPluginMap,
 } from "./_test_utils.ts";
 
@@ -91,7 +90,7 @@ describe("PluginManager", () => {
 
         assertEquals(type, "plugin:error");
         assertEquals(detail.error, err);
-        assert(detail.plugin instanceof TestPlugin);
+        assertEquals(detail.plugin, managedPlugin.plugin);
       } finally {
         cleanup();
         methodStub.restore();
@@ -127,11 +126,11 @@ describe("PluginManager", () => {
       }
     });
     it("should raise plugin:error event if managed plugin onStop throws", async () => {
-      const runningPlugin = mkManagedPlugin(PluginState.Running);
-      const { pluginManager, cleanup } = mkPluginManager([runningPlugin]);
+      const managedPlugin = mkManagedPlugin(PluginState.Running);
+      const { pluginManager, cleanup } = mkPluginManager([managedPlugin]);
       const err = new Error("pluginError");
       const methodStub = stub(
-        runningPlugin.plugin,
+        managedPlugin.plugin,
         "onStop",
         () => {
           throw err;
@@ -147,7 +146,7 @@ describe("PluginManager", () => {
 
         assertEquals(type, "plugin:error");
         assertEquals(detail.error, err);
-        assert(detail.plugin instanceof TestPlugin);
+        assertEquals(detail.plugin, managedPlugin.plugin);
       } finally {
         cleanup();
         methodStub.restore();
