@@ -1,5 +1,5 @@
 import { assertEquals, assertThrows } from "std/testing/asserts.ts";
-import { spy, stub } from "std/testing/mock.ts";
+import { assertSpyCalls, spy, stub } from "std/testing/mock.ts";
 import { beforeEach, describe, it } from "std/testing/bdd.ts";
 import { ErgomaticConfig } from "../config.ts";
 import { PluginManager } from "./mod.ts";
@@ -57,9 +57,9 @@ describe("PluginManager", () => {
       try {
         await pluginManager.start();
 
-        assertEquals(startedSpy.calls.length, 0);
-        assertEquals(erroredSpy.calls.length, 0);
-        assertEquals(stoppedSpy.calls.length, 1);
+        assertSpyCalls(startedSpy, 0);
+        assertSpyCalls(erroredSpy, 0);
+        assertSpyCalls(stoppedSpy, 1);
       } finally {
         cleanup();
         startedSpy.restore();
@@ -84,7 +84,7 @@ describe("PluginManager", () => {
       try {
         await pluginManager.start();
 
-        assertEquals(dispatchSpy.calls.length, 1);
+        assertSpyCalls(dispatchSpy, 1);
 
         const [{ type, detail }] = dispatchSpy.calls[0].args as [CustomEvent];
 
@@ -115,9 +115,9 @@ describe("PluginManager", () => {
       try {
         await pluginManager.stop();
 
-        assertEquals(startedSpy.calls.length, 1);
-        assertEquals(erroredSpy.calls.length, 0);
-        assertEquals(stoppedSpy.calls.length, 0);
+        assertSpyCalls(startedSpy, 1);
+        assertSpyCalls(erroredSpy, 0);
+        assertSpyCalls(stoppedSpy, 0);
       } finally {
         cleanup();
         startedSpy.restore();
@@ -141,7 +141,7 @@ describe("PluginManager", () => {
       try {
         await pluginManager.stop();
 
-        assertEquals(dispatchSpy.calls.length, 1);
+        assertSpyCalls(dispatchSpy, 1);
         const [{ type, detail }] = dispatchSpy.calls[0].args as [CustomEvent];
 
         assertEquals(type, "plugin:error");
