@@ -10,20 +10,20 @@ interface PluginManagerEvent {
   "plugin:error": CustomEvent<{ plugin: Plugin; error: Error }>;
 }
 
-enum PluginState {
+export enum PluginState {
   Stopped,
   Running,
   Error,
 }
 
-interface ManagedPlugin {
+export interface ManagedPlugin {
   plugin: Plugin;
   state: PluginState;
 }
 
-/** Provide a way to mock internal class details in unit tests. */
 export const _internals = {
-  plugins(plugins: ManagedPlugin[]): ManagedPlugin[] {
+  /** Allow mocking managed plugins in tests. */
+  plugins(plugins: ManagedPlugin[]) {
     return plugins;
   },
 };
@@ -82,6 +82,10 @@ export class PluginManager extends EventEmitter<PluginManagerEvent> {
     await Promise.allSettled(promises);
   }
 
+  get #plugins() {
+    return _internals.plugins(this.#_plugins);
+  }
+
   #handlePluginError(managedPlugin: ManagedPlugin, error: Error): void {
     managedPlugin.state = PluginState.Error;
 
@@ -94,10 +98,6 @@ export class PluginManager extends EventEmitter<PluginManagerEvent> {
 
   #pluginsByState(state: PluginState): ManagedPlugin[] {
     return this.#plugins.filter((p) => p.state === state);
-  }
-
-  get #plugins(): ManagedPlugin[] {
-    return _internals.plugins(this.#_plugins);
   }
 
   #createPlugin(

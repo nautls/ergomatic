@@ -1,37 +1,18 @@
 import { assert, assertEquals, assertThrows } from "std/testing/asserts.ts";
 import { spy, stub } from "std/testing/mock.ts";
 import { beforeEach, describe, it } from "std/testing/bdd.ts";
-import { ErgomaticConfig, mergeUserConfigAndValidate } from "../config.ts";
+import { ErgomaticConfig } from "../config.ts";
 import { PluginManager } from "./mod.ts";
-import { Plugin, PluginDescriptor } from "./plugin.ts";
 import { ErgomaticConfigError } from "../error.ts";
-
-const _pluginInternals = {
-  onStart: () => Promise.resolve(),
-  onStop: () => Promise.resolve(),
-};
-
-class TestPlugin extends Plugin {
-  get descriptor(): PluginDescriptor {
-    throw new Error("Method not implemented.");
-  }
-
-  onStart(): Promise<void> {
-    return _pluginInternals.onStart();
-  }
-
-  onStop(): Promise<void> {
-    return _pluginInternals.onStop();
-  }
-}
-
-const testMap = { "test-plugin": TestPlugin };
-
-function testConfig() {
-  return mergeUserConfigAndValidate({
-    plugins: [{ enabled: true, id: "test-plugin" }],
-  });
-}
+import { PluginState } from "./plugin_manager.ts";
+import {
+  _testPluginInternals,
+  mkManagedPlugin,
+  mkPluginManager,
+  testConfig,
+  TestPlugin,
+  testPluginMap,
+} from "./_test_utils.ts";
 
 describe("PluginManager", () => {
   let config: ErgomaticConfig;
@@ -45,7 +26,7 @@ describe("PluginManager", () => {
       config.plugins[0]!.id = "invalid";
 
       assertThrows(
-        () => new PluginManager(config, testMap),
+        () => new PluginManager(config, testPluginMap),
         ErgomaticConfigError,
         "Unknown plugin ID",
       );
@@ -54,31 +35,46 @@ describe("PluginManager", () => {
       config.plugins[0]!.id = "invalid";
       config.plugins[0]!.enabled = false;
 
-      new PluginManager(config, testMap);
+      new PluginManager(config, testPluginMap);
     });
     it("should create PluginManager instance", () => {
-      new PluginManager(config, testMap);
+      new PluginManager(config, testPluginMap);
     });
   });
 
   describe("start()", () => {
-    it("should call onStart for managed plugins", async () => {
-      const pluginManager = new PluginManager(config, testMap);
-      const onStartSpy = spy(_pluginInternals, "onStart");
+    it("should call onStart for stopped plugins", async () => {
+      const startedPlugin = mkManagedPlugin(PluginState.Running);
+      const startedSpy = spy(startedPlugin.plugin, "onStart");
+      const erroredPlugin = mkManagedPlugin(PluginState.Error);
+      const erroredSpy = spy(erroredPlugin.plugin, "onStart");
+      const stoppedPlugin = mkManagedPlugin(PluginState.Stopped);
+      const stoppedSpy = spy(stoppedPlugin.plugin, "onStart");
+      const { pluginManager, cleanup } = mkPluginManager([
+        startedPlugin,
+        stoppedPlugin,
+        erroredPlugin,
+      ]);
 
       try {
         await pluginManager.start();
 
-        assertEquals(onStartSpy.calls.length, 1);
+        assertEquals(startedSpy.calls.length, 0);
+        assertEquals(erroredSpy.calls.length, 0);
+        assertEquals(stoppedSpy.calls.length, 1);
       } finally {
-        onStartSpy.restore();
+        cleanup();
+        startedSpy.restore();
+        erroredSpy.restore();
+        stoppedSpy.restore();
       }
     });
+
     it("should raise plugin:error event if managed plugin onStart throws", async () => {
-      const pluginManager = new PluginManager(config, testMap);
+      const { pluginManager } = mkPluginManager();
       const err = new Error("pluginError");
-      const onStartStub = stub(
-        _pluginInternals,
+      const methodStub = stub(
+        _testPluginInternals,
         "onStart",
         () => {
           throw err;
@@ -90,19 +86,71 @@ describe("PluginManager", () => {
         await pluginManager.start();
 
         assertEquals(dispatchSpy.calls.length, 1);
+
         const [{ type, detail }] = dispatchSpy.calls[0].args as [CustomEvent];
 
         assertEquals(type, "plugin:error");
         assertEquals(detail.error, err);
         assert(detail.plugin instanceof TestPlugin);
       } finally {
-        onStartStub.restore();
+        methodStub.restore();
       }
     });
-    it("should only call onStart for stopped plugins", async () => {
-      const pluginManager = new PluginManager(config, testMap);
+  });
 
-      await pluginManager.start();
+  describe("stop()", () => {
+    it("should call onStop for running plugins", async () => {
+      const startedPlugin = mkManagedPlugin(PluginState.Running);
+      const startedSpy = spy(startedPlugin.plugin, "onStop");
+      const erroredPlugin = mkManagedPlugin(PluginState.Error);
+      const erroredSpy = spy(erroredPlugin.plugin, "onStop");
+      const stoppedPlugin = mkManagedPlugin(PluginState.Stopped);
+      const stoppedSpy = spy(stoppedPlugin.plugin, "onStop");
+      const { pluginManager, cleanup } = mkPluginManager([
+        startedPlugin,
+        stoppedPlugin,
+        erroredPlugin,
+      ]);
+
+      try {
+        await pluginManager.stop();
+
+        assertEquals(startedSpy.calls.length, 1);
+        assertEquals(erroredSpy.calls.length, 0);
+        assertEquals(stoppedSpy.calls.length, 0);
+      } finally {
+        cleanup();
+        startedSpy.restore();
+        erroredSpy.restore();
+        stoppedSpy.restore();
+      }
+    });
+    it("should raise plugin:error event if managed plugin onStop throws", async () => {
+      const runningPlugin = mkManagedPlugin(PluginState.Running);
+      const { pluginManager, cleanup } = mkPluginManager([runningPlugin]);
+      const err = new Error("pluginError");
+      const methodStub = stub(
+        runningPlugin.plugin,
+        "onStop",
+        () => {
+          throw err;
+        },
+      );
+      const dispatchSpy = spy(pluginManager, "dispatchEvent");
+
+      try {
+        await pluginManager.stop();
+
+        assertEquals(dispatchSpy.calls.length, 1);
+        const [{ type, detail }] = dispatchSpy.calls[0].args as [CustomEvent];
+
+        assertEquals(type, "plugin:error");
+        assertEquals(detail.error, err);
+        assert(detail.plugin instanceof TestPlugin);
+      } finally {
+        cleanup();
+        methodStub.restore();
+      }
     });
   });
 });
