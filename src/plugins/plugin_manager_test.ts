@@ -6,7 +6,6 @@ import { PluginManager } from "./mod.ts";
 import { ErgomaticConfigError } from "../error.ts";
 import { PluginState } from "./plugin_manager.ts";
 import {
-  _testPluginInternals,
   mkManagedPlugin,
   mkPluginManager,
   testConfig,
@@ -71,10 +70,11 @@ describe("PluginManager", () => {
     });
 
     it("should raise plugin:error event if managed plugin onStart throws", async () => {
-      const { pluginManager } = mkPluginManager();
+      const managedPlugin = mkManagedPlugin(PluginState.Stopped);
+      const { pluginManager, cleanup } = mkPluginManager([managedPlugin]);
       const err = new Error("pluginError");
       const methodStub = stub(
-        _testPluginInternals,
+        managedPlugin.plugin,
         "onStart",
         () => {
           throw err;
@@ -93,6 +93,7 @@ describe("PluginManager", () => {
         assertEquals(detail.error, err);
         assert(detail.plugin instanceof TestPlugin);
       } finally {
+        cleanup();
         methodStub.restore();
       }
     });

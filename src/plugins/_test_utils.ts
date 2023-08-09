@@ -5,38 +5,9 @@ import { mergeUserConfigAndValidate } from "../config.ts";
 import { PluginManager } from "./mod.ts";
 import { stub } from "std/testing/mock.ts";
 
-interface PluginInternals {
-  onStart(): Promise<void>;
-  onStop(): Promise<void>;
-}
-
-export const _testPluginInternals: PluginInternals = {
-  onStart: () => Promise.resolve(),
-  onStop: () => Promise.resolve(),
-};
-
 export class TestPlugin extends Plugin {
-  /** Allows for mocking/spying on functions */
-  readonly #internals: PluginInternals;
-
-  constructor(
-    args: ConstructorParameters<typeof Plugin>[0],
-    internals = _testPluginInternals,
-  ) {
-    super(args);
-    this.#internals = internals;
-  }
-
   get descriptor(): PluginDescriptor {
     throw new Error("Method not implemented.");
-  }
-
-  onStart(): Promise<void> {
-    return this.#internals.onStart();
-  }
-
-  onStop(): Promise<void> {
-    return this.#internals.onStop();
   }
 }
 
@@ -69,9 +40,8 @@ export function mkPluginManager(
 
 export function mkManagedPlugin(
   state: PluginState = PluginState.Stopped,
-  internals = _testPluginInternals,
 ): ManagedPlugin {
-  const plugin = new TestPlugin({ logger: getLogger(), config: {} }, internals);
+  const plugin = new TestPlugin({ logger: getLogger(), config: {} });
 
   return {
     state,
