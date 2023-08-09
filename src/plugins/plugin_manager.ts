@@ -115,7 +115,7 @@ export class PluginManager extends EventEmitter<PluginManagerEvent> {
     }
 
     return new pluginCtor({
-      config,
+      config: pluginEntry.config,
       logger: createLogger(pluginEntry.id, config.logLevel),
     });
   }
