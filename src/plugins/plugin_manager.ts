@@ -1,10 +1,9 @@
-import { Logger } from "std/log/mod.ts";
 import { Plugin, PluginConstructor } from "./plugin.ts";
 import { ErgomaticConfig, PluginConfigEntry } from "../config.ts";
 import { createLogger } from "../log.ts";
 import { ErgomaticConfigError } from "../error.ts";
 import { pluginConstructorMap } from "../../plugins/mod.ts";
-import { EventEmitter } from "../event_emitter.ts";
+import { Component } from "../component.ts";
 
 interface PluginManagerEvent {
   "plugin:error": CustomEvent<{ plugin: Plugin; error: Error }>;
@@ -28,15 +27,13 @@ export const _internals = {
   },
 };
 
-export class PluginManager extends EventEmitter<PluginManagerEvent> {
-  private readonly logger: Logger;
+export class PluginManager extends Component<PluginManagerEvent> {
   readonly #pluginConstructorMap: Record<string, PluginConstructor>;
   #_plugins: ManagedPlugin[];
 
   constructor(config: ErgomaticConfig, pluginCtorMap = pluginConstructorMap) {
-    super();
+    super(config);
 
-    this.logger = createLogger("PluginManager", config.logLevel);
     this.#pluginConstructorMap = pluginCtorMap;
     this.#_plugins = config.plugins.filter((p) => p.enabled).map((
       pluginEntry,
@@ -44,6 +41,10 @@ export class PluginManager extends EventEmitter<PluginManagerEvent> {
       plugin: this.#createPlugin(config, pluginEntry),
       state: PluginState.Stopped,
     }));
+  }
+
+  name(): string {
+    return "PluginManager";
   }
 
   public async start(): Promise<void> {

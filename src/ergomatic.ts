@@ -1,21 +1,24 @@
-import { Logger } from "std/log/mod.ts";
 import { PluginManager } from "./plugins/plugin_manager.ts";
 import { ErgomaticConfig } from "./config.ts";
-import { createLogger } from "./log.ts";
+import { Component } from "./component.ts";
 
-export class Ergomatic {
-  private readonly logger: Logger;
+export class Ergomatic extends Component {
   private readonly pluginManager: PluginManager;
 
   constructor(config: ErgomaticConfig) {
-    this.logger = createLogger("Ergomatic", config.logLevel);
+    super(config);
+
     this.pluginManager = new PluginManager(config);
   }
 
-  public run(): Promise<void> {
+  name(): string {
+    return "Ergomatic";
+  }
+
+  public async start(): Promise<void> {
     this.logger.debug("Starting Ergomatic");
 
-    return this.pluginManager.start();
+    await this.pluginManager.start();
   }
 
   public async stop(): Promise<void> {
