@@ -6,9 +6,7 @@
     "yargs": "https://deno.land/x/yargs@v17.7.2-deno/deno.ts"
   },
   "lint": {
-    "files": {
-      "exclude": ["src/event_emitter.ts"]
-    }
+    "exclude": ["src/event_emitter.ts"]
   },
   "tasks": {
     "test": "deno test -A",

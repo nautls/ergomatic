@@ -1,5 +1,5 @@
 import { Logger } from "std/log/mod.ts";
-import { Plugin } from "./plugin.ts";
+import { Plugin, PluginConstructor } from "./plugin.ts";
 import { ErgomaticConfig, PluginConfigEntry } from "../config.ts";
 import { createLogger } from "../log.ts";
 import { ErgomaticConfigError } from "../error.ts";
@@ -10,26 +10,35 @@ interface PluginManagerEvent {
   "plugin:error": CustomEvent<{ plugin: Plugin; error: Error }>;
 }
 
-enum PluginState {
+export enum PluginState {
   Stopped,
   Running,
   Error,
 }
 
-interface ManagedPlugin {
+export interface ManagedPlugin {
   plugin: Plugin;
   state: PluginState;
 }
 
+export const _internals = {
+  /** Allow mocking managed plugins in tests. */
+  plugins(plugins: ManagedPlugin[]) {
+    return plugins;
+  },
+};
+
 export class PluginManager extends EventEmitter<PluginManagerEvent> {
   private readonly logger: Logger;
-  #plugins: ManagedPlugin[];
+  readonly #pluginConstructorMap: Record<string, PluginConstructor>;
+  #_plugins: ManagedPlugin[];
 
-  constructor(config: ErgomaticConfig) {
+  constructor(config: ErgomaticConfig, pluginCtorMap = pluginConstructorMap) {
     super();
 
     this.logger = createLogger("PluginManager", config.logLevel);
-    this.#plugins = config.plugins.filter((p) => p.enabled).map((
+    this.#pluginConstructorMap = pluginCtorMap;
+    this.#_plugins = config.plugins.filter((p) => p.enabled).map((
       pluginEntry,
     ) => ({
       plugin: this.#createPlugin(config, pluginEntry),
@@ -73,6 +82,10 @@ export class PluginManager extends EventEmitter<PluginManagerEvent> {
     await Promise.allSettled(promises);
   }
 
+  get #plugins() {
+    return _internals.plugins(this.#_plugins);
+  }
+
   #handlePluginError(managedPlugin: ManagedPlugin, error: Error): void {
     managedPlugin.state = PluginState.Error;
 
@@ -91,7 +104,7 @@ export class PluginManager extends EventEmitter<PluginManagerEvent> {
     config: ErgomaticConfig,
     pluginEntry: PluginConfigEntry,
   ): Plugin {
-    const pluginCtor = pluginConstructorMap[pluginEntry.id];
+    const pluginCtor = this.#pluginConstructorMap[pluginEntry.id];
 
     this.logger.debug(
       `Creating plugin from config: ${JSON.stringify(pluginEntry)}`,
@@ -102,7 +115,7 @@ export class PluginManager extends EventEmitter<PluginManagerEvent> {
     }
 
     return new pluginCtor({
-      config,
+      config: pluginEntry.config,
       logger: createLogger(pluginEntry.id, config.logLevel),
     });
   }
