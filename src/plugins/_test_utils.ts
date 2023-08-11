@@ -4,6 +4,10 @@ import { _internals, ManagedPlugin, PluginState } from "./plugin_manager.ts";
 import { mergeUserConfigAndValidate } from "../config.ts";
 import { PluginManager } from "./mod.ts";
 import { stub } from "std/testing/mock.ts";
+import {
+  BlockchainProvider,
+  DefaultBlockchainProvider,
+} from "../blockchain/blockchain_provider.ts";
 
 export class TestPlugin extends Plugin {
   get descriptor(): PluginDescriptor {
@@ -33,7 +37,11 @@ export function mkPluginManager(
   };
 
   return {
-    pluginManager: new PluginManager(config, pluginMap),
+    pluginManager: new PluginManager(
+      config,
+      new DefaultBlockchainProvider(config),
+      pluginMap,
+    ),
     cleanup,
   };
 }
@@ -41,7 +49,11 @@ export function mkPluginManager(
 export function mkManagedPlugin(
   state: PluginState = PluginState.Stopped,
 ): ManagedPlugin {
-  const plugin = new TestPlugin({ logger: getLogger(), config: {} });
+  const plugin = new TestPlugin({
+    logger: getLogger(),
+    blockchainProvider: {} as BlockchainProvider, // TODO
+    config: {},
+  });
 
   return {
     state,
