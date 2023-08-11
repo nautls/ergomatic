@@ -5,7 +5,7 @@ import { ErgomaticConfigError } from "../error.ts";
 import { pluginConstructorMap } from "../../plugins/mod.ts";
 import { Component } from "../component.ts";
 
-interface PluginManagerEvent {
+export interface PluginManagerEvent {
   "plugin:error": CustomEvent<{ plugin: Plugin; error: Error }>;
 }
 

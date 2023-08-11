@@ -1,9 +1,10 @@
-import { PluginManager } from "./plugins/plugin_manager.ts";
+import { PluginManager, PluginManagerEvent } from "./plugins/plugin_manager.ts";
 import { ErgomaticConfig } from "./config.ts";
 import { Component } from "./component.ts";
 
 interface ErgomaticEvent {
   "component:error": CustomEvent<{ component: Component; error: Error }>;
+  "plugin:error": PluginManagerEvent["plugin:error"];
 }
 
 interface ErgomaticOpts {
@@ -20,12 +21,14 @@ export class Ergomatic extends Component<ErgomaticEvent> {
 
     const pluginManager = opts.pluginManager ?? new PluginManager(opts.config);
 
+    pluginManager.addEventListener("plugin:error", (e) => this.#bubbleEvent(e));
+
     this.#components = [pluginManager];
   }
 
   public async start(): Promise<void> {
     if (this.#isRunning) {
-      this.logger.warning("Ergomatic is already running");
+      this.logger.warning("Ergomatic is already running, doing nothing");
 
       return;
     }
@@ -49,7 +52,7 @@ export class Ergomatic extends Component<ErgomaticEvent> {
 
   public async stop(): Promise<void> {
     if (!this.#isRunning) {
-      this.logger.warning("Ergomatic is not running");
+      this.logger.warning("Ergomatic is not running, doing nothing");
 
       return;
     }
@@ -72,10 +75,14 @@ export class Ergomatic extends Component<ErgomaticEvent> {
   }
 
   #onComponentError(component: Component, error: Error) {
-    this.logger.debug(`Component ${component.name} failed: ${error}`);
+    this.logger.debug(`Component ${component.name} raised exception: ${error}`);
 
     this.dispatchEvent(
       new CustomEvent("component:error", { detail: { component, error } }),
     );
+  }
+
+  #bubbleEvent<T>(evt: CustomEvent<T>) {
+    this.dispatchEvent(new CustomEvent(evt.type, { detail: evt.detail }));
   }
 }

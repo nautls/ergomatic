@@ -9,7 +9,7 @@
     "exclude": ["src/event_emitter.ts"]
   },
   "tasks": {
-    "test": "deno test -A",
+    "test": "ERGOMATIC_TEST=true deno test -A",
     "run": "deno run -A src/cli.ts run",
     "compile": "deno compile -A --output bin/ergomatic src/cli.ts"
   }

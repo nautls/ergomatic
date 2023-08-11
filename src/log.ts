@@ -1,5 +1,6 @@
 import { handlers, LevelName, Logger, LogRecord } from "std/log/mod.ts";
 import { format } from "std/datetime/mod.ts";
+import { isTesting } from "./_utils.ts";
 
 function formatter({ loggerName, levelName, msg }: LogRecord) {
   const datetime = format(new Date(), "yyyy-MM-dd HH:mm:ss");
@@ -8,11 +9,17 @@ function formatter({ loggerName, levelName, msg }: LogRecord) {
 }
 
 export function createLogger(name: string, level: LevelName) {
-  return new Logger(name, level, {
-    handlers: [
+  const logHandlers = [];
+
+  if (!isTesting()) {
+    logHandlers.push(
       new handlers.ConsoleHandler(level, {
         formatter,
       }),
-    ],
+    );
+  }
+
+  return new Logger(name, level, {
+    handlers: logHandlers,
   });
 }
