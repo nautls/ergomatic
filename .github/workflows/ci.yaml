@@ -26,3 +26,17 @@ jobs:
           deno-version: v1.x
       - name: Unit tests
         run: deno task test
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, macos-12, windows-2022]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - name: Compiles CLI
+        run: deno task compile
+      - name: Run CLI
+        run: ./bin/ergomatic --version
