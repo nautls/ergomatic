@@ -4,7 +4,7 @@ import { Component } from "./component.ts";
 import {
   BlockchainProvider,
   DefaultBlockchainProvider,
-} from "./blockchain/blockchain_provider.ts";
+} from "./blockchain/mod.ts";
 
 interface ErgomaticEvent {
   "component:error": CustomEvent<{ component: Component; error: Error }>;

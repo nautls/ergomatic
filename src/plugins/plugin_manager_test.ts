@@ -14,7 +14,7 @@ import {
 import {
   BlockchainProvider,
   DefaultBlockchainProvider,
-} from "../blockchain/blockchain_provider.ts";
+} from "../blockchain/mod.ts";
 
 describe("PluginManager", () => {
   let config: ErgomaticConfig;

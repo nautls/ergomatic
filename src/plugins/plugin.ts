@@ -1,5 +1,5 @@
 import { Logger } from "std/log/mod.ts";
-import { BlockchainProvider } from "../blockchain/blockchain_provider.ts";
+import { BlockchainProvider } from "../blockchain/mod.ts";
 
 export interface PluginDescriptor {
   /** User friendly name of the plugin. */

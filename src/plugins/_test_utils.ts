@@ -7,7 +7,7 @@ import { stub } from "std/testing/mock.ts";
 import {
   BlockchainProvider,
   DefaultBlockchainProvider,
-} from "../blockchain/blockchain_provider.ts";
+} from "../blockchain/mod.ts";
 
 export class TestPlugin extends Plugin {
   get descriptor(): PluginDescriptor {

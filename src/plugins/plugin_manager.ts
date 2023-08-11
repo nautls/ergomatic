@@ -7,7 +7,7 @@ import { Component } from "../component.ts";
 import {
   BlockchainProvider,
   DefaultBlockchainProvider,
-} from "../blockchain/blockchain_provider.ts";
+} from "../blockchain/mod.ts";
 
 export interface PluginManagerEvent {
   "plugin:error": CustomEvent<{ plugin: Plugin; error: Error }>;
