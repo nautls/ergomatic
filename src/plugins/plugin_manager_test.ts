@@ -11,18 +11,15 @@ import {
   testConfig,
   testPluginMap,
 } from "./_test_utils.ts";
-import {
-  BlockchainProvider,
-  DefaultBlockchainProvider,
-} from "../blockchain/mod.ts";
+import { BlockchainClient, BlockchainProvider } from "../blockchain/mod.ts";
 
 describe("PluginManager", () => {
   let config: ErgomaticConfig;
-  let blockchainProvider: BlockchainProvider;
+  let blockchainClient: BlockchainClient;
 
   beforeEach(() => {
     config = testConfig();
-    blockchainProvider = new DefaultBlockchainProvider(config);
+    blockchainClient = new BlockchainProvider(config);
   });
 
   describe("constructor", () => {
@@ -30,7 +27,7 @@ describe("PluginManager", () => {
       config.plugins[0]!.id = "invalid";
 
       assertThrows(
-        () => new PluginManager(config, blockchainProvider, testPluginMap),
+        () => new PluginManager(config, blockchainClient, testPluginMap),
         ErgomaticConfigError,
         "Unknown plugin ID",
       );
@@ -39,10 +36,10 @@ describe("PluginManager", () => {
       config.plugins[0]!.id = "invalid";
       config.plugins[0]!.enabled = false;
 
-      new PluginManager(config, blockchainProvider, testPluginMap);
+      new PluginManager(config, blockchainClient, testPluginMap);
     });
     it("should create PluginManager instance", () => {
-      new PluginManager(config, blockchainProvider, testPluginMap);
+      new PluginManager(config, blockchainClient, testPluginMap);
     });
   });
 

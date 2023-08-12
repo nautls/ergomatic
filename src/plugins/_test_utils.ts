@@ -4,10 +4,7 @@ import { _internals, ManagedPlugin, PluginState } from "./plugin_manager.ts";
 import { mergeUserConfigAndValidate } from "../config.ts";
 import { PluginManager } from "./mod.ts";
 import { stub } from "std/testing/mock.ts";
-import {
-  BlockchainProvider,
-  DefaultBlockchainProvider,
-} from "../blockchain/mod.ts";
+import { BlockchainClient, BlockchainProvider } from "../blockchain/mod.ts";
 
 export class TestPlugin extends Plugin {
   get descriptor(): PluginDescriptor {
@@ -39,7 +36,7 @@ export function mkPluginManager(
   return {
     pluginManager: new PluginManager(
       config,
-      new DefaultBlockchainProvider(config),
+      new BlockchainProvider(config),
       pluginMap,
     ),
     cleanup,
@@ -51,7 +48,7 @@ export function mkManagedPlugin(
 ): ManagedPlugin {
   const plugin = new TestPlugin({
     logger: getLogger(),
-    blockchainProvider: {} as BlockchainProvider, // TODO
+    blockchainClient: {} as BlockchainClient, // TODO
     config: {},
   });
 

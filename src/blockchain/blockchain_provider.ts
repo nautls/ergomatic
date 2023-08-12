@@ -7,31 +7,27 @@ import {
 } from "@fleet-sdk/common";
 import { Component } from "../component.ts";
 import { ErgomaticConfig } from "../config.ts";
+import { BlockchainClient } from "./blockchain_client.ts";
+import { ExplorerClient, NodeClient } from "./clients/mod.ts";
 
-export interface BlockchainProvider {
-  submitTx(unsignedTx: UnsignedTransaction): Promise<TransactionId>;
+export class BlockchainProvider extends Component implements BlockchainClient {
+  readonly #explorer: BlockchainClient;
+  readonly #node: BlockchainClient;
 
-  getBoxByTokenId<T extends AmountType = string>(
-    tokenId: TokenId,
-  ): Promise<Box<T>>;
-}
-
-export class DefaultBlockchainProvider extends Component
-  implements BlockchainProvider {
   constructor(config: ErgomaticConfig) {
     super(config, "BlockchainProvider");
+
+    this.#explorer = new ExplorerClient(config);
+    this.#node = new NodeClient(config);
   }
 
-  async submitTx(unsignedTx: UnsignedTransaction): Promise<TransactionId> {
-    // prefer node api
-    // fallback to explorer api
-    throw new Error("Method not implemented.");
+  submitTx(unsignedTx: UnsignedTransaction): Promise<TransactionId> {
+    return this.#node.submitTx(unsignedTx);
   }
 
-  async getBoxByTokenId<T extends AmountType = string>(
+  getBoxesByTokenId<T extends AmountType = string>(
     tokenId: TokenId,
-  ): Promise<Box<T>> {
-    // call explorer api
-    throw new Error("Method not implemented.");
+  ): Promise<Box<T>[]> {
+    return this.#explorer.getBoxesByTokenId(tokenId);
   }
 }

@@ -4,10 +4,7 @@ import { createLogger } from "../log.ts";
 import { ErgomaticConfigError } from "../error.ts";
 import { pluginConstructorMap } from "../../plugins/mod.ts";
 import { Component } from "../component.ts";
-import {
-  BlockchainProvider,
-  DefaultBlockchainProvider,
-} from "../blockchain/mod.ts";
+import { BlockchainClient, BlockchainProvider } from "../blockchain/mod.ts";
 
 export interface PluginManagerEvent {
   "plugin:error": CustomEvent<{ plugin: Plugin; error: Error }>;
@@ -33,18 +30,18 @@ export const _internals = {
 
 export class PluginManager extends Component<PluginManagerEvent> {
   readonly #pluginConstructorMap: Record<string, PluginConstructor>;
-  readonly #blockchainProvider: BlockchainProvider;
+  readonly #blockchainClient: BlockchainClient;
   #_plugins: ManagedPlugin[];
 
   constructor(
     config: ErgomaticConfig,
-    blockchainProvider?: BlockchainProvider,
+    blockchainClient?: BlockchainClient,
     pluginCtorMap = pluginConstructorMap,
   ) {
     super(config, "PluginManager");
 
-    this.#blockchainProvider = blockchainProvider ??
-      new DefaultBlockchainProvider(config);
+    this.#blockchainClient = blockchainClient ??
+      new BlockchainProvider(config);
     this.#pluginConstructorMap = pluginCtorMap;
     this.#_plugins = config.plugins.filter((p) => p.enabled).map((
       pluginEntry,
@@ -124,7 +121,7 @@ export class PluginManager extends Component<PluginManagerEvent> {
 
     return new pluginCtor({
       config: pluginEntry.config,
-      blockchainProvider: this.#blockchainProvider,
+      blockchainClient: this.#blockchainClient,
       logger: createLogger(pluginEntry.id, config.logLevel),
     });
   }

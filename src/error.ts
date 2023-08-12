@@ -15,3 +15,12 @@ export class ErgomaticConfigError extends ErgomaticError {
     this.name = "ErgomaticConfigError";
   }
 }
+
+export class ErgomaticUnsupportedError extends ErgomaticError {
+  constructor(message?: string) {
+    super(message);
+
+    Object.setPrototypeOf(this, ErgomaticConfigError.prototype);
+    this.name = "ErgomaticUnsupportedError";
+  }
+}
