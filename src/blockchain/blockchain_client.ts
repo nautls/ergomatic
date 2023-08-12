@@ -1,15 +1,15 @@
 import {
   AmountType,
   Box,
+  SignedTransaction,
   TokenId,
   TransactionId,
-  UnsignedTransaction,
 } from "@fleet-sdk/common";
 
 export interface BlockchainClient {
-  submitTx(unsignedTx: UnsignedTransaction): Promise<TransactionId>;
+  submitTx(signedTx: SignedTransaction): Promise<TransactionId>;
 
   getBoxesByTokenId<T extends AmountType = string>(
     tokenId: TokenId,
-  ): Promise<Box<T>[]>;
+  ): AsyncGenerator<Box<T>[]>;
 }
