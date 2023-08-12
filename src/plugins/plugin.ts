@@ -1,4 +1,5 @@
 import { Logger } from "std/log/mod.ts";
+import { BlockchainClient } from "../blockchain/mod.ts";
 
 export interface PluginDescriptor {
   /** User friendly name of the plugin. */
@@ -19,6 +20,7 @@ export type PluginConstructor = {
 export interface PluginArgs<T = any> {
   config: T;
   logger: Logger;
+  blockchainClient: BlockchainClient;
 }
 
 export abstract class Plugin<T = unknown> {
@@ -28,9 +30,12 @@ export abstract class Plugin<T = unknown> {
   /** Logger configured to log output of this plugin. */
   protected readonly logger: Logger;
 
-  constructor({ config, logger }: PluginArgs<T>) {
+  protected readonly blockchainClient: BlockchainClient;
+
+  constructor({ config, logger, blockchainClient }: PluginArgs<T>) {
     this.config = config;
     this.logger = logger;
+    this.blockchainClient = blockchainClient;
   }
 
   /**

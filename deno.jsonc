@@ -3,7 +3,9 @@
     "std/": "https://deno.land/std@0.196.0/",
     "zod": "https://deno.land/x/zod@v3.21.4/mod.ts",
     "lodash.merge": "npm:lodash.merge@4.6.2",
-    "yargs": "https://deno.land/x/yargs@v17.7.2-deno/deno.ts"
+    "yargs": "https://deno.land/x/yargs@v17.7.2-deno/deno.ts",
+    "@fleet-sdk/common": "npm:@fleet-sdk/common@0.1.3",
+    "axios": "npm:axios@1.4.0"
   },
   "lint": {
     "exclude": ["src/event_emitter.ts"]
