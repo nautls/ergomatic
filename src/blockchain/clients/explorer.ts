@@ -17,6 +17,7 @@ export class ExplorerClient implements BlockchainClient {
     this.#http = axios.create({
       // let URL handle any possible trailing slash,etc in the configured endpoint.
       baseURL: new URL("/api/v1", config.explorer.endpoint).href,
+      timeout: 10000, // explorer API can be slow
     });
   }
 
