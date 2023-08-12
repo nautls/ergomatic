@@ -11,12 +11,14 @@ export abstract class Component<
 > extends EventEmitter<T> {
   protected readonly logger: Logger;
   protected readonly config: ErgomaticConfig;
+  public readonly name: string;
 
-  constructor(config: ErgomaticConfig) {
+  constructor(config: ErgomaticConfig, name: string) {
     super();
 
     this.config = config;
-    this.logger = createLogger(this.name(), config.logLevel);
+    this.name = name;
+    this.logger = createLogger(this.name, config.logLevel);
   }
 
   start(): Promise<void> {
@@ -26,6 +28,4 @@ export abstract class Component<
   stop(): Promise<void> {
     return Promise.resolve();
   }
-
-  abstract name(): string;
 }

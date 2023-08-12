@@ -5,7 +5,7 @@ import { ErgomaticConfigError } from "../error.ts";
 import { pluginConstructorMap } from "../../plugins/mod.ts";
 import { Component } from "../component.ts";
 
-interface PluginManagerEvent {
+export interface PluginManagerEvent {
   "plugin:error": CustomEvent<{ plugin: Plugin; error: Error }>;
 }
 
@@ -32,7 +32,7 @@ export class PluginManager extends Component<PluginManagerEvent> {
   #_plugins: ManagedPlugin[];
 
   constructor(config: ErgomaticConfig, pluginCtorMap = pluginConstructorMap) {
-    super(config);
+    super(config, "PluginManager");
 
     this.#pluginConstructorMap = pluginCtorMap;
     this.#_plugins = config.plugins.filter((p) => p.enabled).map((
@@ -41,10 +41,6 @@ export class PluginManager extends Component<PluginManagerEvent> {
       plugin: this.#createPlugin(config, pluginEntry),
       state: PluginState.Stopped,
     }));
-  }
-
-  name(): string {
-    return "PluginManager";
   }
 
   public async start(): Promise<void> {

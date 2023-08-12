@@ -54,7 +54,7 @@ async function runHandler({ config }: RunArgs) {
   const userConfig = await getConfig(config) as PartialErgomaticConfig;
   const ergomaticConfig = mergeUserConfigAndValidate(userConfig);
 
-  _ergomatic = new Ergomatic(ergomaticConfig);
+  _ergomatic = new Ergomatic({ config: ergomaticConfig });
   _ergomatic.start();
 }
 
