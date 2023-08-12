@@ -42,14 +42,13 @@ export class ExplorerClient implements BlockchainClient {
       const { data } = await this.#http.get(`/boxes/byTokenId/${tokenId}`, {
         params: { offset, limit: this.#pageSize },
       });
+      const { total, items } = data;
 
       if (totalItems === null) {
-        totalItems = data.total;
+        totalItems = total;
       }
 
-      const items = data.items;
-
-      if (items.length > 0) {
+      if (items.length) {
         yield items;
       }
 
