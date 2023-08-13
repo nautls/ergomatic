@@ -43,6 +43,7 @@ interface RotatingFileHandlerOptions extends HandlerOptions {
  * our loggers are currently created in constructors, etc.
  *
  * Create a sync version of `RotatingFileHandler` and use that instead.
+ * This is basically just `RotatingFileHandler` but using `Deno.*Sync` methods instead.
  */
 class SyncRotatingFileHandler extends handlers.FileHandler {
   #maxBytes: number;
