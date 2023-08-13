@@ -1,4 +1,4 @@
 bin
-.ergomatic.toml
+ergomatic.yaml
 cov
 .vscode
