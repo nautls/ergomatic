@@ -1,10 +1,11 @@
 import { getLogger } from "std/log/mod.ts";
-import { Plugin, PluginDescriptor } from "./plugin.ts";
+import { Plugin, PluginConstructor, PluginDescriptor } from "./plugin.ts";
 import { _internals, ManagedPlugin, PluginState } from "./plugin_manager.ts";
-import { mergeUserConfigAndValidate } from "../config.ts";
+import { ErgomaticConfig } from "../config.ts";
 import { PluginManager } from "./mod.ts";
 import { stub } from "std/testing/mock.ts";
 import { BlockchainClient, BlockchainProvider } from "../blockchain/mod.ts";
+import { testConfig } from "../_testing.ts";
 
 export class TestPlugin extends Plugin {
   get descriptor(): PluginDescriptor {
@@ -14,24 +15,25 @@ export class TestPlugin extends Plugin {
 
 export const testPluginMap = { "test-plugin": TestPlugin };
 
-export function testConfig() {
-  return mergeUserConfigAndValidate({
-    plugins: [{ enabled: true, id: "test-plugin" }],
-  });
+interface TestPluginManagerOpts {
+  plugins?: ManagedPlugin[];
+  config?: ErgomaticConfig;
+  pluginMap?: Record<string, PluginConstructor>;
 }
 
-export function mkPluginManager(
-  withPlugins: ManagedPlugin[] = [],
-  config = testConfig(),
-  pluginMap = testPluginMap,
+export function mkTestPluginManager(
+  opts?: TestPluginManagerOpts,
 ) {
-  const pluginsStub = withPlugins.length
-    ? stub(_internals, "plugins", () => withPlugins)
+  const pluginsStub = opts?.plugins?.length
+    ? stub(_internals, "plugins", () => opts?.plugins!)
     : null;
 
   const cleanup = () => {
     pluginsStub?.restore();
   };
+
+  const config = opts?.config ?? testConfig();
+  const pluginMap = opts?.pluginMap ?? testPluginMap;
 
   return {
     pluginManager: new PluginManager(
@@ -43,7 +45,7 @@ export function mkPluginManager(
   };
 }
 
-export function mkManagedPlugin(
+export function mkTestManagedPlugin(
   state: PluginState = PluginState.Stopped,
 ): ManagedPlugin {
   const plugin = new TestPlugin({

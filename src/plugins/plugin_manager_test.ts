@@ -6,12 +6,12 @@ import { PluginManager } from "./mod.ts";
 import { ErgomaticConfigError } from "../error.ts";
 import { PluginState } from "./plugin_manager.ts";
 import {
-  mkManagedPlugin,
-  mkPluginManager,
-  testConfig,
+  mkTestManagedPlugin,
+  mkTestPluginManager,
   testPluginMap,
-} from "./_test_utils.ts";
+} from "./_testing.ts";
 import { BlockchainClient, BlockchainProvider } from "../blockchain/mod.ts";
+import { testConfig } from "../_testing.ts";
 
 describe("PluginManager", () => {
   let config: ErgomaticConfig;
@@ -45,17 +45,19 @@ describe("PluginManager", () => {
 
   describe("start()", () => {
     it("should call onStart for stopped plugins", async () => {
-      const startedPlugin = mkManagedPlugin(PluginState.Running);
+      const startedPlugin = mkTestManagedPlugin(PluginState.Running);
       const startedSpy = spy(startedPlugin.plugin, "onStart");
-      const erroredPlugin = mkManagedPlugin(PluginState.Error);
+      const erroredPlugin = mkTestManagedPlugin(PluginState.Error);
       const erroredSpy = spy(erroredPlugin.plugin, "onStart");
-      const stoppedPlugin = mkManagedPlugin(PluginState.Stopped);
+      const stoppedPlugin = mkTestManagedPlugin(PluginState.Stopped);
       const stoppedSpy = spy(stoppedPlugin.plugin, "onStart");
-      const { pluginManager, cleanup } = mkPluginManager([
-        startedPlugin,
-        stoppedPlugin,
-        erroredPlugin,
-      ]);
+      const { pluginManager, cleanup } = mkTestPluginManager({
+        plugins: [
+          startedPlugin,
+          stoppedPlugin,
+          erroredPlugin,
+        ],
+      });
 
       try {
         await pluginManager.start();
@@ -72,8 +74,10 @@ describe("PluginManager", () => {
     });
 
     it("should raise plugin:error event if managed plugin onStart throws", async () => {
-      const managedPlugin = mkManagedPlugin(PluginState.Stopped);
-      const { pluginManager, cleanup } = mkPluginManager([managedPlugin]);
+      const managedPlugin = mkTestManagedPlugin(PluginState.Stopped);
+      const { pluginManager, cleanup } = mkTestPluginManager({
+        plugins: [managedPlugin],
+      });
       const err = new Error("pluginError");
       const methodStub = stub(
         managedPlugin.plugin,
@@ -103,17 +107,19 @@ describe("PluginManager", () => {
 
   describe("stop()", () => {
     it("should call onStop for running plugins", async () => {
-      const startedPlugin = mkManagedPlugin(PluginState.Running);
+      const startedPlugin = mkTestManagedPlugin(PluginState.Running);
       const startedSpy = spy(startedPlugin.plugin, "onStop");
-      const erroredPlugin = mkManagedPlugin(PluginState.Error);
+      const erroredPlugin = mkTestManagedPlugin(PluginState.Error);
       const erroredSpy = spy(erroredPlugin.plugin, "onStop");
-      const stoppedPlugin = mkManagedPlugin(PluginState.Stopped);
+      const stoppedPlugin = mkTestManagedPlugin(PluginState.Stopped);
       const stoppedSpy = spy(stoppedPlugin.plugin, "onStop");
-      const { pluginManager, cleanup } = mkPluginManager([
-        startedPlugin,
-        stoppedPlugin,
-        erroredPlugin,
-      ]);
+      const { pluginManager, cleanup } = mkTestPluginManager({
+        plugins: [
+          startedPlugin,
+          stoppedPlugin,
+          erroredPlugin,
+        ],
+      });
 
       try {
         await pluginManager.stop();
@@ -129,8 +135,10 @@ describe("PluginManager", () => {
       }
     });
     it("should raise plugin:error event if managed plugin onStop throws", async () => {
-      const managedPlugin = mkManagedPlugin(PluginState.Running);
-      const { pluginManager, cleanup } = mkPluginManager([managedPlugin]);
+      const managedPlugin = mkTestManagedPlugin(PluginState.Running);
+      const { pluginManager, cleanup } = mkTestPluginManager({
+        plugins: [managedPlugin],
+      });
       const err = new Error("pluginError");
       const methodStub = stub(
         managedPlugin.plugin,
