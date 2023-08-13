@@ -1,9 +1,9 @@
-import { z } from "zod";
+import { z } from "zod/mod.ts";
 import merge from "lodash.merge";
 
 const pluginConfigEntrySchema = z.object({
   id: z.string(),
-  enabled: z.boolean(),
+  enabled: z.boolean().default(true),
   config: z.object({}).optional(),
 });
 
