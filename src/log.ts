@@ -11,7 +11,7 @@ function formatter({ loggerName, levelName, msg }: LogRecord) {
   return `[${datetime}][${loggerName}][${levelName}] ${msg}`;
 }
 
-function _logsDir() {
+function logsDir() {
   const dataDir = dirs("data_local");
 
   if (!dataDir) {
@@ -25,10 +25,18 @@ export function createLogger(name: string, level: LevelName) {
   const logHandlers = [];
 
   if (!isTesting()) {
+    const fileHandler = new handlers.FileHandler(level, {
+      formatter,
+      filename: join(logsDir(), "ergomatic.log"),
+    });
+
+    fileHandler.setup();
+
     logHandlers.push(
       new handlers.ConsoleHandler(level, {
         formatter,
       }),
+      fileHandler,
     );
   }
 
