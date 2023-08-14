@@ -39,8 +39,8 @@ interface RotatingFileHandlerOptions extends HandlerOptions {
 
 /**
  * `RotatingFileHandler` provided by deno has async `setup()` method
- * Because of this we would need to refactor a lot of code to make it work as
- * our loggers are currently created in constructors, etc.
+ * which appears to be a bug: https://github.com/denoland/deno_std/issues/3538#issuecomment-1676942783
+ * If this is addressed in deno maybe one day we can remove this class.
  *
  * Create a sync version of `RotatingFileHandler` and use that instead.
  * This is basically just `RotatingFileHandler` but using `Deno.*Sync` methods instead.
