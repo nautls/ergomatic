@@ -12,12 +12,15 @@ import { ErgomaticConfig } from "../../config.ts";
 export class ExplorerClient implements BlockchainClient {
   readonly #http: AxiosInstance;
   #pageSize = 100;
+  #timeoutMs: number;
 
-  constructor(config: ErgomaticConfig) {
+  constructor(config: ErgomaticConfig, httpTimeoutMs: number = 10000) {
+    // axios timeout is incompatible with deno due to a missing nodejs API
+    // use signals for timeouts instead.
+    this.#timeoutMs = httpTimeoutMs;
     this.#http = axios.create({
       // let URL handle any possible trailing slash,etc in the configured endpoint.
       baseURL: new URL("/api/v1", config.explorer.endpoint).href,
-      timeout: 10000, // explorer API can be slow
     });
   }
 
@@ -25,6 +28,9 @@ export class ExplorerClient implements BlockchainClient {
     const response = await this.#http.post(
       "/mempool/transactions/submit",
       signedTx,
+      {
+        signal: AbortSignal.timeout(this.#timeoutMs),
+      },
     );
 
     return response.data;
@@ -41,6 +47,7 @@ export class ExplorerClient implements BlockchainClient {
     while (true) {
       const { data } = await this.#http.get(`/boxes/byTokenId/${tokenId}`, {
         params: { offset, limit: this.#pageSize },
+        signal: AbortSignal.timeout(this.#timeoutMs),
       });
       const { total, items } = data;
 

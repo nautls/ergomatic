@@ -1,23 +1,19 @@
 import { beforeEach, describe, it } from "std/testing/bdd.ts";
 import { Ergomatic } from "./ergomatic.ts";
 import { PluginManager } from "./plugins/mod.ts";
-import { ErgomaticConfig, mergeUserConfigAndValidate } from "./config.ts";
+import { ErgomaticConfig } from "./config.ts";
 import { assertSpyCalls, spy, stub } from "std/testing/mock.ts";
 import { assertEquals } from "std/testing/asserts.ts";
-
-function mkConfig() {
-  return mergeUserConfigAndValidate({
-    plugins: [{ enabled: true, id: "example_plugin" }],
-  });
-}
+import { testConfig } from "./_testing.ts";
+import { mkTestPluginManager } from "./plugins/_testing.ts";
 
 describe("Ergomatic", () => {
   let config: ErgomaticConfig;
   let pluginManager: PluginManager;
 
   beforeEach(() => {
-    config = mkConfig();
-    pluginManager = new PluginManager(config);
+    config = testConfig();
+    pluginManager = mkTestPluginManager({ config }).pluginManager;
   });
 
   describe("start()", () => {

@@ -3,7 +3,8 @@ import { Plugin, PluginDescriptor } from "../../src/plugins/mod.ts";
 export const EXAMPLE_PLUGIN_ID = "example_plugin";
 
 interface ExamplePluginConfig {
-  someValue: number;
+  tokenId: string;
+  exitAtPage: number;
 }
 
 export class ExamplePlugin extends Plugin<ExamplePluginConfig> {
@@ -16,11 +17,30 @@ export class ExamplePlugin extends Plugin<ExamplePluginConfig> {
     };
   }
 
-  onStart(): Promise<void> {
+  async onStart(): Promise<void> {
     this.logger.info(
       `Example plugin started with config: ${JSON.stringify(this.config)}`,
     );
 
-    return Promise.resolve();
+    const { tokenId, exitAtPage } = this.config;
+    let currentPage = 0;
+
+    for await (const page of this.blockchainClient.getBoxesByTokenId(tokenId)) {
+      currentPage++;
+
+      this.logger.info(
+        `Got page ${currentPage} of boxes for token ${tokenId}`,
+      );
+
+      this.logger.info(`there was ${page.length} boxes in this page`);
+
+      if (currentPage === exitAtPage) {
+        this.logger.info(
+          `Exiting at page ${currentPage} of boxes for token ${tokenId}`,
+        );
+
+        break;
+      }
+    }
   }
 }
