@@ -20,14 +20,20 @@ function formatter({ loggerName, levelName, msg }: LogRecord) {
   return `[${datetime}][${loggerName}][${levelName}] ${msg}`;
 }
 
+export function ensureDir(dir: string) {
+  Deno.mkdirSync(dir, { recursive: true });
+
+  return dir;
+}
+
 function logsDir() {
   const dataDir = dirs("data_local");
-
+  
   if (!dataDir) {
     throw new ErgomaticError("Failed to find data directory");
   }
 
-  return join(dataDir, "ergomatic");
+  return ensureDir(join(dataDir, "ergomatic"));
 }
 
 interface RotatingFileHandlerOptions extends HandlerOptions {
