@@ -28,7 +28,7 @@ export function ensureDir(dir: string) {
 
 function logsDir() {
   const dataDir = dirs("data_local");
-  
+
   if (!dataDir) {
     throw new ErgomaticError("Failed to find data directory");
   }
