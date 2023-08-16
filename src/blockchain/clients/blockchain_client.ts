@@ -12,4 +12,6 @@ export interface BlockchainClient {
   getBoxesByTokenId<T extends AmountType = string>(
     tokenId: TokenId,
   ): AsyncGenerator<Box<T>[]>;
+
+  getMempool(): Promise<SignedTransaction[]>;
 }

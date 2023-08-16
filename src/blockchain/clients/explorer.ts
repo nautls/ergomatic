@@ -6,15 +6,18 @@ import {
   TransactionId,
 } from "@fleet-sdk/common";
 import axios, { AxiosInstance } from "axios";
-import { BlockchainClient } from "../blockchain_client.ts";
+import { BlockchainClient } from "./blockchain_client.ts";
 import { ErgomaticConfig } from "../../config.ts";
+import { Component } from "../../component.ts";
 
-export class ExplorerClient implements BlockchainClient {
+export class ExplorerClient extends Component implements BlockchainClient {
   readonly #http: AxiosInstance;
   #pageSize = 100;
   #timeoutMs: number;
 
   constructor(config: ErgomaticConfig, httpTimeoutMs: number = 10000) {
+    super(config, "ExplorerClient");
+
     // axios timeout is incompatible with deno due to a missing nodejs API
     // use signals for timeouts instead.
     this.#timeoutMs = httpTimeoutMs;
@@ -22,6 +25,10 @@ export class ExplorerClient implements BlockchainClient {
       // let URL handle any possible trailing slash,etc in the configured endpoint.
       baseURL: new URL("/api/v1", config.explorer.endpoint).href,
     });
+  }
+
+  getMempool(): Promise<SignedTransaction[]> {
+    throw new Error(`${this.name} does not support getMempool operation`);
   }
 
   async submitTx(signedTx: SignedTransaction): Promise<TransactionId> {
