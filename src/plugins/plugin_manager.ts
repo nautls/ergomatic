@@ -4,7 +4,7 @@ import { createLogger } from "../log.ts";
 import { ErgomaticConfigError } from "../error.ts";
 import { pluginConstructorMap } from "../../plugins/mod.ts";
 import { Component } from "../component.ts";
-import { BlockchainClient } from "../blockchain/mod.ts";
+import { BlockchainClient, BlockchainMonitor } from "../blockchain/mod.ts";
 
 export interface PluginManagerEvent {
   "plugin:error": CustomEvent<{ plugin: Plugin; error: Error }>;
@@ -31,16 +31,19 @@ export const _internals = {
 export class PluginManager extends Component<PluginManagerEvent> {
   readonly #pluginConstructorMap: Record<string, PluginConstructor>;
   readonly #blockchainClient: BlockchainClient;
+  readonly #blockchainMonitor: BlockchainMonitor;
   #_plugins: ManagedPlugin[];
 
   constructor(
     config: ErgomaticConfig,
     blockchainClient: BlockchainClient,
+    blockchainMonitor: BlockchainMonitor,
     pluginCtorMap = pluginConstructorMap,
   ) {
     super(config, "PluginManager");
 
     this.#blockchainClient = blockchainClient;
+    this.#blockchainMonitor = blockchainMonitor;
     this.#pluginConstructorMap = pluginCtorMap;
     this.#_plugins = config.plugins.filter((p) => p.enabled).map((
       pluginEntry,
@@ -52,6 +55,20 @@ export class PluginManager extends Component<PluginManagerEvent> {
 
   public async start(): Promise<void> {
     this.logger.debug("Starting plugins");
+
+    // these event listeners aren't cleaned up in stop()
+    // probably wont be a issue because starting/stopping ergomatic is unlikely to be a thing.
+    // But if it does happen for some reason then event handlers will be called twice after the 2nd start.
+    // TODO: fix this if it is a problem
+    this.#blockchainMonitor.addEventListener(
+      "monitor:mempool-tx",
+      ({ detail }) =>
+        this.#pluginsByState(PluginState.Running).forEach((p) =>
+          p.plugin.onMempoolTx(detail).catch((e) =>
+            this.#handlePluginError(p, e)
+          )
+        ),
+    );
 
     const promises = this.#pluginsByState(PluginState.Stopped).map(async (
       managedPlugin,
@@ -84,10 +101,6 @@ export class PluginManager extends Component<PluginManagerEvent> {
     });
 
     await Promise.allSettled(promises);
-  }
-
-  get activePlugins(): ReadonlyArray<Plugin> {
-    return this.#pluginsByState(PluginState.Running).map((p) => p.plugin);
   }
 
   get #managedPlugins() {

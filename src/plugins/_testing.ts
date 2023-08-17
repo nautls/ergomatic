@@ -6,6 +6,7 @@ import { PluginManager } from "./mod.ts";
 import { stub } from "std/testing/mock.ts";
 import { BlockchainClient, BlockchainProvider } from "../blockchain/mod.ts";
 import { testConfig } from "../_testing.ts";
+import { mkTestBlockchainMonitor } from "../blockchain/_testing.ts";
 
 export class TestPlugin extends Plugin {
   get descriptor(): PluginDescriptor {
@@ -34,11 +35,14 @@ export function mkTestPluginManager(
 
   const config = opts?.config ?? testConfig();
   const pluginMap = opts?.pluginMap ?? testPluginMap;
+  const client = new BlockchainProvider(config);
+  const monitor = mkTestBlockchainMonitor(config, client);
 
   return {
     pluginManager: new PluginManager(
       config,
-      new BlockchainProvider(config),
+      client,
+      monitor,
       pluginMap,
     ),
     cleanup,

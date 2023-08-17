@@ -28,18 +28,12 @@ export class Ergomatic extends Component<ErgomaticEvent> {
 
     const blockchainClient = opts.blockchainClient ??
       new BlockchainProvider(opts.config);
-    const pluginManager = opts.pluginManager ??
-      new PluginManager(opts.config, blockchainClient);
     const blockchainMonitor = opts.blockchainMonitor ??
       new BlockchainMonitor(opts.config, blockchainClient);
+    const pluginManager = opts.pluginManager ??
+      new PluginManager(opts.config, blockchainClient, blockchainMonitor);
 
     pluginManager.addEventListener("plugin:error", (e) => this.#bubbleEvent(e));
-    // TODO: handle errors in plugin handlers
-    blockchainMonitor.addEventListener(
-      "monitor:mempool-tx",
-      ({ detail }) =>
-        pluginManager.activePlugins.forEach((p) => p.onMempoolTx(detail)),
-    );
 
     this.#components = [pluginManager, blockchainMonitor];
   }

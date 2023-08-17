@@ -10,16 +10,23 @@ import {
   mkTestPluginManager,
   testPluginMap,
 } from "./_testing.ts";
-import { BlockchainClient, BlockchainProvider } from "../blockchain/mod.ts";
+import {
+  BlockchainClient,
+  BlockchainMonitor,
+  BlockchainProvider,
+} from "../blockchain/mod.ts";
 import { testConfig } from "../_testing.ts";
+import { mkTestBlockchainMonitor } from "../blockchain/_testing.ts";
 
 describe("PluginManager", () => {
   let config: ErgomaticConfig;
   let blockchainClient: BlockchainClient;
+  let blockchainMonitor: BlockchainMonitor;
 
   beforeEach(() => {
     config = testConfig();
     blockchainClient = new BlockchainProvider(config);
+    blockchainMonitor = mkTestBlockchainMonitor(config, blockchainClient);
   });
 
   describe("constructor", () => {
@@ -27,7 +34,13 @@ describe("PluginManager", () => {
       config.plugins[0]!.id = "invalid";
 
       assertThrows(
-        () => new PluginManager(config, blockchainClient, testPluginMap),
+        () =>
+          new PluginManager(
+            config,
+            blockchainClient,
+            blockchainMonitor,
+            testPluginMap,
+          ),
         ErgomaticConfigError,
         "Unknown plugin ID",
       );
@@ -36,10 +49,20 @@ describe("PluginManager", () => {
       config.plugins[0]!.id = "invalid";
       config.plugins[0]!.enabled = false;
 
-      new PluginManager(config, blockchainClient, testPluginMap);
+      new PluginManager(
+        config,
+        blockchainClient,
+        blockchainMonitor,
+        testPluginMap,
+      );
     });
     it("should create PluginManager instance", () => {
-      new PluginManager(config, blockchainClient, testPluginMap);
+      new PluginManager(
+        config,
+        blockchainClient,
+        blockchainMonitor,
+        testPluginMap,
+      );
     });
   });
 
@@ -161,30 +184,6 @@ describe("PluginManager", () => {
       } finally {
         cleanup();
         methodStub.restore();
-      }
-    });
-  });
-
-  describe("activePlugins", () => {
-    it("should only return running plugins", () => {
-      const startedPlugin = mkTestManagedPlugin(PluginState.Running);
-      const startedPlugin2 = mkTestManagedPlugin(PluginState.Running);
-      const { pluginManager, cleanup } = mkTestPluginManager({
-        plugins: [
-          startedPlugin,
-          mkTestManagedPlugin(PluginState.Error),
-          mkTestManagedPlugin(PluginState.Stopped),
-          startedPlugin2,
-        ],
-      });
-
-      try {
-        assertEquals(pluginManager.activePlugins, [
-          startedPlugin.plugin,
-          startedPlugin2.plugin,
-        ]);
-      } finally {
-        cleanup();
       }
     });
   });
