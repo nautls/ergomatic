@@ -31,7 +31,6 @@ export const _internals = {
 export class PluginManager extends Component<PluginManagerEvent> {
   readonly #pluginConstructorMap: Record<string, PluginConstructor>;
   readonly #blockchainClient: BlockchainClient;
-  readonly #blockchainMonitor: BlockchainMonitor;
   #_plugins: ManagedPlugin[];
 
   constructor(
@@ -43,7 +42,6 @@ export class PluginManager extends Component<PluginManagerEvent> {
     super(config, "PluginManager");
 
     this.#blockchainClient = blockchainClient;
-    this.#blockchainMonitor = blockchainMonitor;
     this.#pluginConstructorMap = pluginCtorMap;
     this.#_plugins = config.plugins.filter((p) => p.enabled).map((
       pluginEntry,
@@ -51,24 +49,12 @@ export class PluginManager extends Component<PluginManagerEvent> {
       plugin: this.#createPlugin(config, pluginEntry),
       state: PluginState.Stopped,
     }));
+
+    this.#wireEvents(blockchainMonitor);
   }
 
   public async start(): Promise<void> {
     this.logger.debug("Starting plugins");
-
-    // these event listeners aren't cleaned up in stop()
-    // probably wont be a issue because starting/stopping ergomatic is unlikely to be a thing.
-    // But if it does happen for some reason then event handlers will be called twice after the 2nd start.
-    // TODO: fix this if it is a problem
-    this.#blockchainMonitor.addEventListener(
-      "monitor:mempool-tx",
-      ({ detail }) =>
-        this.#pluginsByState(PluginState.Running).forEach((p) =>
-          p.plugin.onMempoolTx(detail).catch((e) =>
-            this.#handlePluginError(p, e)
-          )
-        ),
-    );
 
     const promises = this.#pluginsByState(PluginState.Stopped).map(async (
       managedPlugin,
@@ -140,5 +126,27 @@ export class PluginManager extends Component<PluginManagerEvent> {
       blockchainClient: this.#blockchainClient,
       logger: createLogger(pluginEntry.id, config.logLevel),
     });
+  }
+
+  #wireEvents(blockchainMonitor: BlockchainMonitor) {
+    blockchainMonitor.addEventListener(
+      "monitor:mempool-tx",
+      ({ detail }) =>
+        this.#pluginsByState(PluginState.Running).forEach((p) =>
+          p.plugin.onMempoolTx(detail).catch((e) =>
+            this.#handlePluginError(p, e)
+          )
+        ),
+    );
+
+    blockchainMonitor.addEventListener(
+      "monitor:mempool-tx-drop",
+      ({ detail }) =>
+        this.#pluginsByState(PluginState.Running).forEach((p) =>
+          p.plugin.onMempoolTxDrop(detail).catch((e) =>
+            this.#handlePluginError(p, e)
+          )
+        ),
+    );
   }
 }

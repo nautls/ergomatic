@@ -60,5 +60,10 @@ export abstract class Plugin<T = unknown> {
     return Promise.resolve();
   }
 
+  /** Called when a transaction is dropped from mempool. */
+  onMempoolTxDrop(_tx: SignedTransaction): Promise<void> {
+    return Promise.resolve();
+  }
+
   abstract get descriptor(): PluginDescriptor;
 }
