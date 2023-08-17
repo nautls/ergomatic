@@ -50,7 +50,7 @@ export class PluginManager extends Component<PluginManagerEvent> {
       state: PluginState.Stopped,
     }));
 
-    this.#wireEvents(blockchainMonitor);
+    this.#setupEventHandlers(blockchainMonitor);
   }
 
   public async start(): Promise<void> {
@@ -128,7 +128,7 @@ export class PluginManager extends Component<PluginManagerEvent> {
     });
   }
 
-  #wireEvents(blockchainMonitor: BlockchainMonitor) {
+  #setupEventHandlers(blockchainMonitor: BlockchainMonitor) {
     blockchainMonitor.addEventListener(
       "monitor:mempool-tx",
       ({ detail }) =>
