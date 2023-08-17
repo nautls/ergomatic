@@ -65,5 +65,15 @@ export abstract class Plugin<T = unknown> {
     return Promise.resolve();
   }
 
+  /** Called when a transaction has been included in a block. */
+  onIncludedTx(_tx: SignedTransaction): Promise<void> {
+    return Promise.resolve();
+  }
+
+  /** Called when a new block is added to the blockchain. */
+  onNewBlock(block: any): Promise<void> {
+    return Promise.resolve();
+  }
+
   abstract get descriptor(): PluginDescriptor;
 }

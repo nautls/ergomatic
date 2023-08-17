@@ -138,12 +138,29 @@ export class PluginManager extends Component<PluginManagerEvent> {
           )
         ),
     );
-
     blockchainMonitor.addEventListener(
       "monitor:mempool-tx-drop",
       ({ detail }) =>
         this.#pluginsByState(PluginState.Running).forEach((p) =>
           p.plugin.onMempoolTxDrop(detail).catch((e) =>
+            this.#handlePluginError(p, e)
+          )
+        ),
+    );
+    blockchainMonitor.addEventListener(
+      "monitor:included-tx",
+      ({ detail }) =>
+        this.#pluginsByState(PluginState.Running).forEach((p) =>
+          p.plugin.onIncludedTx(detail).catch((e) =>
+            this.#handlePluginError(p, e)
+          )
+        ),
+    );
+    blockchainMonitor.addEventListener(
+      "monitor:new-block",
+      ({ detail }) =>
+        this.#pluginsByState(PluginState.Running).forEach((p) =>
+          p.plugin.onNewBlock(detail).catch((e) =>
             this.#handlePluginError(p, e)
           )
         ),

@@ -15,7 +15,8 @@ interface MonitorState {
 interface BlockchainMonitorEvent {
   "monitor:mempool-tx": CustomEvent<SignedTransaction>;
   "monitor:mempool-tx-drop": CustomEvent<SignedTransaction>;
-  "monitor:block": CustomEvent<unknown>;
+  "monitor:included-tx": CustomEvent<SignedTransaction>;
+  "monitor:new-block": CustomEvent<unknown>;
 }
 
 export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
@@ -95,7 +96,7 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
       const newBlock = await this.#blockchainClient.getBlock(currentHeight);
 
       this.dispatchEvent(
-        new CustomEvent("monitor:block", { detail: newBlock }),
+        new CustomEvent("monitor:new-block", { detail: newBlock }),
       );
 
       this.#state.currentHeight = currentHeight;
