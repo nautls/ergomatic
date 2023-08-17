@@ -23,7 +23,7 @@ export class NodeClient extends Component implements BlockchainClient {
     });
   }
 
-  getBlock(height: number): Promise<unknown> {
+  getBlock(_height: number): Promise<unknown> {
     throw new Error("Method not implemented.");
   }
 

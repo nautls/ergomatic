@@ -1,5 +1,6 @@
 import { Logger } from "std/log/mod.ts";
 import { BlockchainClient } from "../blockchain/mod.ts";
+import { SignedTransaction } from "@fleet-sdk/common";
 
 export interface PluginDescriptor {
   /** User friendly name of the plugin. */
@@ -51,6 +52,11 @@ export abstract class Plugin<T = unknown> {
    * Plugin clean-up should be done here.
    */
   onStop(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  /** Called when a new transaction is added to mempool. */
+  onMempoolTx(_tx: SignedTransaction): Promise<void> {
     return Promise.resolve();
   }
 

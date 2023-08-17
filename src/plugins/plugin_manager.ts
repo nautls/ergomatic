@@ -23,7 +23,7 @@ export interface ManagedPlugin {
 
 export const _internals = {
   /** Allow mocking managed plugins in tests. */
-  plugins(plugins: ManagedPlugin[]) {
+  managedPlugins(plugins: ManagedPlugin[]) {
     return plugins;
   },
 };
@@ -87,8 +87,12 @@ export class PluginManager extends Component<PluginManagerEvent> {
     await Promise.allSettled(promises);
   }
 
-  get #plugins() {
-    return _internals.plugins(this.#_plugins);
+  get activePlugins(): ReadonlyArray<Plugin> {
+    return this.#pluginsByState(PluginState.Running).map((p) => p.plugin);
+  }
+
+  get #managedPlugins() {
+    return _internals.managedPlugins(this.#_plugins);
   }
 
   #handlePluginError(managedPlugin: ManagedPlugin, error: Error): void {
@@ -102,7 +106,7 @@ export class PluginManager extends Component<PluginManagerEvent> {
   }
 
   #pluginsByState(state: PluginState): ManagedPlugin[] {
-    return this.#plugins.filter((p) => p.state === state);
+    return this.#managedPlugins.filter((p) => p.state === state);
   }
 
   #createPlugin(

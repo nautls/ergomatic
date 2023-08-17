@@ -14,6 +14,7 @@ interface MonitorState {
 
 interface BlockchainMonitorEvent {
   "monitor:mempool-tx": CustomEvent<SignedTransaction>;
+  "monitor:mempool-tx-drop": CustomEvent<SignedTransaction>;
   "monitor:block": CustomEvent<unknown>;
 }
 
@@ -74,6 +75,8 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
         txId,
       ) => txId !== tx.id);
 
+      // remove txid from undefined state transactions map if present
+      // this resets the mempool drop detection counter for this txid
       delete this.#state.mempoolTxChecks[tx.id];
     }
 
@@ -110,17 +113,15 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
       //     end
     }
 
-    // for txid in undefinedStateCheks.keys
-    // do
-    //     # if a tx is not included in a block in dropChecks * `n` seconds,
-    //     # then it's probably dropped from the mempool
-    //     if undefinedStateCheks[txid] > maxChecks
-    //     do # consider dropped
-    //         plugins.all.onMempoolTxDrop(txid)
-    //         delete undefinedStateCheks[txid]
-    //     else # one more inconclusive check
-    //         undefinedStateCheks[txid] += 1
-    //     end
-    // end
+    for (const txId of Object.keys(this.#state.mempoolTxChecks)) {
+      // if a tx is not included in a block in dropChecks * `n` seconds,
+      // then it's probably dropped from the mempool
+      if (this.#state.mempoolTxChecks[txId] > this.#maxMempoolTxChecks) {
+        // TODO raise mempool dropped, so we still need to keep track of txns not just the id?
+        delete this.#state.mempoolTxChecks[txId];
+      } else {
+        this.#state.mempoolTxChecks[txId] += 1;
+      }
+    }
   }
 }

@@ -164,4 +164,28 @@ describe("PluginManager", () => {
       }
     });
   });
+
+  describe("activePlugins", () => {
+    it("should only return running plugins", () => {
+      const startedPlugin = mkTestManagedPlugin(PluginState.Running);
+      const startedPlugin2 = mkTestManagedPlugin(PluginState.Running);
+      const { pluginManager, cleanup } = mkTestPluginManager({
+        plugins: [
+          startedPlugin,
+          mkTestManagedPlugin(PluginState.Error),
+          mkTestManagedPlugin(PluginState.Stopped),
+          startedPlugin2,
+        ],
+      });
+
+      try {
+        assertEquals(pluginManager.activePlugins, [
+          startedPlugin.plugin,
+          startedPlugin2.plugin,
+        ]);
+      } finally {
+        cleanup();
+      }
+    });
+  });
 });

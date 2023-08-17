@@ -1,7 +1,11 @@
 import { PluginManager, PluginManagerEvent } from "./plugins/plugin_manager.ts";
 import { ErgomaticConfig } from "./config.ts";
 import { Component } from "./component.ts";
-import { BlockchainClient, BlockchainProvider } from "./blockchain/mod.ts";
+import {
+  BlockchainClient,
+  BlockchainMonitor,
+  BlockchainProvider,
+} from "./blockchain/mod.ts";
 
 interface ErgomaticEvent {
   "component:error": CustomEvent<{ component: Component; error: Error }>;
@@ -12,6 +16,7 @@ interface ErgomaticOpts {
   config: ErgomaticConfig;
   pluginManager?: PluginManager;
   blockchainClient?: BlockchainClient;
+  blockchainMonitor?: BlockchainMonitor;
 }
 
 export class Ergomatic extends Component<ErgomaticEvent> {
@@ -25,10 +30,18 @@ export class Ergomatic extends Component<ErgomaticEvent> {
       new BlockchainProvider(opts.config);
     const pluginManager = opts.pluginManager ??
       new PluginManager(opts.config, blockchainClient);
+    const blockchainMonitor = opts.blockchainMonitor ??
+      new BlockchainMonitor(opts.config, blockchainClient);
 
     pluginManager.addEventListener("plugin:error", (e) => this.#bubbleEvent(e));
+    // TODO: handle errors in plugin handlers
+    blockchainMonitor.addEventListener(
+      "monitor:mempool-tx",
+      ({ detail }) =>
+        pluginManager.activePlugins.forEach((p) => p.onMempoolTx(detail)),
+    );
 
-    this.#components = [pluginManager];
+    this.#components = [pluginManager, blockchainMonitor];
   }
 
   public async start(): Promise<void> {

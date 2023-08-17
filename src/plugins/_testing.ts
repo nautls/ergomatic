@@ -25,7 +25,7 @@ export function mkTestPluginManager(
   opts?: TestPluginManagerOpts,
 ) {
   const pluginsStub = opts?.plugins?.length
-    ? stub(_internals, "plugins", () => opts?.plugins!)
+    ? stub(_internals, "managedPlugins", () => opts?.plugins!)
     : null;
 
   const cleanup = () => {
