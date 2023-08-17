@@ -22,6 +22,14 @@ export class BlockchainProvider extends Component implements BlockchainClient {
     this.#node = new NodeClient(config);
   }
 
+  getBlock(height: number): Promise<unknown> {
+    return this.#node.getBlock(height);
+  }
+
+  getCurrentHeight(): Promise<number> {
+    return this.#node.getCurrentHeight();
+  }
+
   getMempool(): Promise<SignedTransaction[]> {
     return this.#node.getMempool();
   }

@@ -14,4 +14,8 @@ export interface BlockchainClient {
   ): AsyncGenerator<Box<T>[]>;
 
   getMempool(): Promise<SignedTransaction[]>;
+
+  getCurrentHeight(): Promise<number>;
+
+  getBlock(height: number): Promise<unknown>;
 }

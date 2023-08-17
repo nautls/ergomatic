@@ -1,19 +1,26 @@
-import { TransactionId } from "@fleet-sdk/common";
+import { SignedTransaction, TransactionId } from "@fleet-sdk/common";
 import { Component } from "../component.ts";
 import { ErgomaticConfig } from "../config.ts";
 import { BlockchainClient, BlockchainProvider } from "./clients/mod.ts";
 
 interface MonitorState {
   currentHeight: number;
+  /** map of txid -> bool indicating if mempool tx has been passed to plugins */
   mempoolTxDelivery: Record<TransactionId, boolean>;
+  /** map of txid -> int indicating the number of re-checks */
   mempoolTxChecks: Record<TransactionId, number>;
-  maxMempoolTxChecks: number;
   pastMempoolTxIds: TransactionId[];
 }
 
-export class BlockchainMonitor extends Component {
+interface BlockchainMonitorEvent {
+  "monitor:mempool-tx": CustomEvent<SignedTransaction>;
+  "monitor:block": CustomEvent<unknown>;
+}
+
+export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
   readonly #blockchainClient: BlockchainClient;
   readonly #pollInterval: number;
+  readonly #maxMempoolTxChecks: number;
   readonly #state: MonitorState;
   #taskHandle?: number;
 
@@ -21,16 +28,17 @@ export class BlockchainMonitor extends Component {
     config: ErgomaticConfig,
     blockchainClient?: BlockchainClient,
     pollInterval: number = 10000,
+    maxMempoolTxChecks: number = 10,
   ) {
     super(config, "BlockchainMonitor");
 
     this.#pollInterval = pollInterval;
+    this.#maxMempoolTxChecks = maxMempoolTxChecks;
     this.#blockchainClient = blockchainClient ?? new BlockchainProvider(config);
     this.#state = {
       currentHeight: 0,
       mempoolTxDelivery: {},
       mempoolTxChecks: {},
-      maxMempoolTxChecks: 10,
       pastMempoolTxIds: [],
     };
   }
@@ -51,65 +59,56 @@ export class BlockchainMonitor extends Component {
   async #monitor() {
     this.logger.debug("Gathering blockchain state");
 
-    //     mempool = getMempool()
-    // for tx in mempool
-    // do
-    //     if mempoolDelivery[tx.txid] == false
-    //     do
-    //         plugins.all.onMempoolTx(tx)
-    //         mempoolDelivery[tx.txid] = true
-    //     end
-
-    //     pastMempool.removeIfExists(tx.txid)
-
-    //     # remove txid from undefined state transactions map,
-    //     # if present
-    //     delete undefinedStateCheks[tx.txid]
-    // end
     const mempool = await this.#blockchainClient.getMempool();
 
     for (const tx of mempool) {
       if (!this.#state.mempoolTxDelivery[tx.id]) {
         this.#state.mempoolTxDelivery[tx.id] = true;
 
-        // TODO: emit onMempoolTx event
+        this.dispatchEvent(
+          new CustomEvent("monitor:mempool-tx", { detail: tx }),
+        );
       }
 
-      //     pastMempool.removeIfExists(tx.txid)
+      this.#state.pastMempoolTxIds = this.#state.pastMempoolTxIds.filter((
+        txId,
+      ) => txId !== tx.id);
 
-      //     # remove txid from undefined state transactions map,
-      //     # if present
-      //     delete undefinedStateCheks[tx.txid]
+      delete this.#state.mempoolTxChecks[tx.id];
     }
 
-    // # if tx was present in previous mempool, but not in the
-    // # current, it may have been dropped or included in a block
-    // for txid in pastMempool
-    // do
-    //     undefinedStateCheks[txid] = (undefinedStateCheks[txid] ?? 0) + 1
-    // end
-    // pastMempool = mempool.map(tx => tx.txid);
+    // if tx was present in previous mempool, but not in the
+    // current, it may have been dropped or included in a block
+    for (const txId of this.#state.pastMempoolTxIds) {
+      this.#state.mempoolTxChecks[txId] =
+        (this.#state.mempoolTxChecks[txId] ?? 0) + 1;
+    }
 
-    // height = getCurrentHeight()
-    // if height > currentHeight
-    // do
-    //     newBlock = getBlock(height)
-    //     plugins.all.onNewBlock(newBlock)
+    this.#state.pastMempoolTxIds = mempool.map((tx) => tx.id);
 
-    //     currentHeight = height
+    const currentHeight = await this.#blockchainClient.getCurrentHeight();
 
-    //     for tx in newBlock.txs
-    //     do
-    //         plugins.all.onIncludedTx(tx)
+    if (currentHeight > this.#state.currentHeight) {
+      const newBlock = await this.#blockchainClient.getBlock(currentHeight);
 
-    //         # stop tracking txid mempool delivery for this txid
-    //         delete mempoolDelivery[tx.txid]
+      this.dispatchEvent(
+        new CustomEvent("monitor:block", { detail: newBlock }),
+      );
 
-    //         # prevent `onMempoolTxDrop` event for this txid as
-    //         # it is now included in a block
-    //         delete undefinedStateCheks[tx.txid]
-    //     end
-    // end
+      this.#state.currentHeight = currentHeight;
+
+      //     for tx in newBlock.txs
+      //     do
+      //         plugins.all.onIncludedTx(tx)
+
+      //         # stop tracking txid mempool delivery for this txid
+      //         delete mempoolDelivery[tx.txid]
+
+      //         # prevent `onMempoolTxDrop` event for this txid as
+      //         # it is now included in a block
+      //         delete undefinedStateCheks[tx.txid]
+      //     end
+    }
 
     // for txid in undefinedStateCheks.keys
     // do

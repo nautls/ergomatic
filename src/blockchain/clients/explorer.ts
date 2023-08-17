@@ -27,6 +27,14 @@ export class ExplorerClient extends Component implements BlockchainClient {
     });
   }
 
+  getBlock(height: number): Promise<unknown> {
+    throw new Error("Method not implemented.");
+  }
+
+  getCurrentHeight(): Promise<number> {
+    throw new Error("Method not implemented.");
+  }
+
   getMempool(): Promise<SignedTransaction[]> {
     throw new Error(`${this.name} does not support getMempool operation`);
   }
