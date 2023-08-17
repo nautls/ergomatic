@@ -93,7 +93,9 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
     const currentHeight = await this.#blockchainClient.getCurrentHeight();
 
     if (currentHeight > this.#state.currentHeight) {
-      const newBlock = await this.#blockchainClient.getBlock(currentHeight);
+      const newBlock = await this.#blockchainClient.getBlock(
+        currentHeight,
+      ) as any;
 
       this.dispatchEvent(
         new CustomEvent("monitor:new-block", { detail: newBlock }),
@@ -101,17 +103,18 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
 
       this.#state.currentHeight = currentHeight;
 
-      //     for tx in newBlock.txs
-      //     do
-      //         plugins.all.onIncludedTx(tx)
+      for (const tx of newBlock.blockTransactions) {
+        this.dispatchEvent(
+          new CustomEvent("monitor:included-tx", { detail: tx }),
+        );
 
-      //         # stop tracking txid mempool delivery for this txid
-      //         delete mempoolDelivery[tx.txid]
+        // stop tracking mempool delivery for this txid
+        delete this.#state.mempoolTxDelivery[tx.id];
 
-      //         # prevent `onMempoolTxDrop` event for this txid as
-      //         # it is now included in a block
-      //         delete undefinedStateCheks[tx.txid]
-      //     end
+        // prevent `onMempoolTxDrop` event for this txid as
+        // it is now included in a block
+        delete this.#state.mempoolTxChecks[tx.id];
+      }
     }
 
     for (const txId of Object.keys(this.#state.mempoolTxChecks)) {
