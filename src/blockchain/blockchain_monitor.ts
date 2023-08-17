@@ -1,7 +1,7 @@
 import { SignedTransaction, TransactionId } from "@fleet-sdk/common";
 import { Component } from "../component.ts";
 import { ErgomaticConfig } from "../config.ts";
-import { BlockchainClient, BlockchainProvider } from "./clients/mod.ts";
+import { BlockchainClient } from "./clients/mod.ts";
 
 interface MonitorState {
   currentHeight: number;
@@ -27,7 +27,7 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
 
   constructor(
     config: ErgomaticConfig,
-    blockchainClient?: BlockchainClient,
+    blockchainClient: BlockchainClient,
     pollInterval: number = 10000,
     maxMempoolTxChecks: number = 10,
   ) {
@@ -35,7 +35,7 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
 
     this.#pollInterval = pollInterval;
     this.#maxMempoolTxChecks = maxMempoolTxChecks;
-    this.#blockchainClient = blockchainClient ?? new BlockchainProvider(config);
+    this.#blockchainClient = blockchainClient;
     this.#state = {
       currentHeight: 0,
       mempoolTxDelivery: {},
