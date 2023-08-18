@@ -77,6 +77,8 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
       return;
     }
 
+    this.#state.lastPeerMsgTimestamp = lastPeerMsgTimestamp!;
+
     const mempool = [];
     // the loop following this where we go through all the mempool txs could
     // go in here as well but each time the `monitor:mempool-tx` event is raised
