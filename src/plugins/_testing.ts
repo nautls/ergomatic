@@ -7,7 +7,6 @@ import { stub } from "std/testing/mock.ts";
 import {
   BlockchainProvider,
   DefaultBlockchainClient,
-  DefaultBlockchainProvider,
 } from "../blockchain/mod.ts";
 import { testConfig } from "../_testing.ts";
 import { mkTestBlockchainMonitor } from "../blockchain/_testing.ts";
@@ -39,7 +38,7 @@ export function mkTestPluginManager(
 
   const config = opts?.config ?? testConfig();
   const pluginMap = opts?.pluginMap ?? testPluginMap;
-  const provider = new DefaultBlockchainProvider(config);
+  const provider = new BlockchainProvider(config);
   const client = new DefaultBlockchainClient(config);
   const monitor = mkTestBlockchainMonitor(config, client);
 

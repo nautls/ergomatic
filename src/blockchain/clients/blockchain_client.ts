@@ -10,13 +10,20 @@ import { ErgomaticConfig } from "../../config.ts";
 import { ExplorerClient } from "./explorer.ts";
 import { NodeClient } from "./node.ts";
 
-export interface BlockchainClient {
+/**
+ * RestrictedBlockchainClient is a blockchain client that is exclusively used by plugins.
+ * The API is intentionally restricted to prevent plugins issuing excessive API requests
+ * that are instead provided to plugins via a snapshot of the blockchain state.
+ */
+export interface RestrictedBlockchainClient {
   submitTx(signedTx: SignedTransaction): Promise<TransactionId>;
 
   getBoxesByTokenId<T extends AmountType = string>(
     tokenId: TokenId,
   ): AsyncGenerator<Box<T>[]>;
+}
 
+export interface BlockchainClient extends RestrictedBlockchainClient {
   getMempool(): AsyncGenerator<SignedTransaction[]>;
 
   getCurrentHeight(): Promise<number>;

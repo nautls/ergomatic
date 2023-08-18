@@ -6,7 +6,6 @@ import {
   BlockchainMonitor,
   BlockchainProvider,
   DefaultBlockchainClient,
-  DefaultBlockchainProvider,
 } from "./blockchain/mod.ts";
 
 interface ErgomaticEvent {
@@ -29,8 +28,8 @@ export class Ergomatic extends Component<ErgomaticEvent> {
   constructor(opts: ErgomaticOpts) {
     super(opts.config, "Ergomatic");
 
-    const blockchainProvider = opts.blockchainClient ??
-      new DefaultBlockchainProvider(opts.config);
+    const blockchainProvider = opts.blockchainProvider ??
+      new BlockchainProvider(opts.config);
     const blockchainClient = opts.blockchainClient ??
       new DefaultBlockchainClient(opts.config);
     const blockchainMonitor = opts.blockchainMonitor ??

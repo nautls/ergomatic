@@ -15,7 +15,6 @@ import {
   BlockchainMonitor,
   BlockchainProvider,
   DefaultBlockchainClient,
-  DefaultBlockchainProvider,
 } from "../blockchain/mod.ts";
 import { testConfig } from "../_testing.ts";
 import { mkTestBlockchainMonitor } from "../blockchain/_testing.ts";
@@ -28,7 +27,7 @@ describe("PluginManager", () => {
 
   beforeEach(() => {
     config = testConfig();
-    blockchainProvider = new DefaultBlockchainProvider(config);
+    blockchainProvider = new BlockchainProvider(config);
     blockchainClient = new DefaultBlockchainClient(config);
     blockchainMonitor = mkTestBlockchainMonitor(config, blockchainClient);
   });
