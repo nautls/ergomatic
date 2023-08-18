@@ -21,7 +21,7 @@ interface BlockchainMonitorEvent {
 
 export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
   readonly #blockchainClient: BlockchainClient;
-  readonly #pollInterval: number;
+  readonly #pollIntervalMs: number;
   readonly #maxMempoolTxChecks: number;
   readonly #state: MonitorState;
   #taskHandle?: number;
@@ -29,12 +29,12 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
   constructor(
     config: ErgomaticConfig,
     blockchainClient: BlockchainClient,
-    pollInterval: number = 10000,
+    pollIntervalMs: number = 500,
     maxMempoolTxChecks: number = 10,
   ) {
     super(config, "BlockchainMonitor");
 
-    this.#pollInterval = pollInterval;
+    this.#pollIntervalMs = pollIntervalMs;
     this.#maxMempoolTxChecks = maxMempoolTxChecks;
     this.#blockchainClient = blockchainClient;
     this.#state = {
@@ -47,7 +47,7 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
 
   start(): Promise<void> {
     // TODO: raise component:error event if monitor throws exception
-    this.#taskHandle = setInterval(() => this.#monitor(), this.#pollInterval);
+    this.#taskHandle = setInterval(() => this.#monitor(), this.#pollIntervalMs);
 
     return super.start();
   }

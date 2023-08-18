@@ -52,7 +52,11 @@ export class NodeClient extends Component implements BlockchainClient {
 
   async *getMempool(): AsyncGenerator<SignedTransaction[]> {
     let offset = 0;
-    const limit = 100; // highest value supported by node
+    // the max limit is defined as 100 in the node api spec but is not enforced
+    // take advantage of this to reduce the number of requests
+    // this function is still paginated with the expectation that this could
+    // be changed in the future.
+    const limit = 100000;
 
     while (true) {
       const { data } = await this.#http.get("/transactions/unconfirmed", {
