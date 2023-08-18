@@ -50,12 +50,26 @@ export class NodeClient extends Component implements BlockchainClient {
     );
   }
 
-  getMempool(): Promise<SignedTransaction[]> {
-    // TODO: this might need pagination
-    return this.#http.get(
-      "/transactions/unconfirmed",
-      this.#defaultRequestConfig,
-    );
+  async *getMempool(): AsyncGenerator<SignedTransaction[]> {
+    let offset = 0;
+    const limit = 100; // highest value supported by node
+
+    while (true) {
+      const { data } = await this.#http.get("/transactions/unconfirmed", {
+        params: { offset, limit },
+        ...this.#defaultRequestConfig,
+      });
+
+      if (data.length) {
+        yield data;
+      }
+
+      if (data.length < limit) {
+        break;
+      }
+
+      offset += limit;
+    }
   }
 
   get #defaultRequestConfig() {

@@ -5,6 +5,8 @@ import {
   BlockchainClient,
   BlockchainMonitor,
   BlockchainProvider,
+  DefaultBlockchainClient,
+  DefaultBlockchainProvider,
 } from "./blockchain/mod.ts";
 
 interface ErgomaticEvent {
@@ -16,6 +18,7 @@ interface ErgomaticOpts {
   config: ErgomaticConfig;
   pluginManager?: PluginManager;
   blockchainClient?: BlockchainClient;
+  blockchainProvider?: BlockchainProvider;
   blockchainMonitor?: BlockchainMonitor;
 }
 
@@ -26,12 +29,14 @@ export class Ergomatic extends Component<ErgomaticEvent> {
   constructor(opts: ErgomaticOpts) {
     super(opts.config, "Ergomatic");
 
+    const blockchainProvider = opts.blockchainClient ??
+      new DefaultBlockchainProvider(opts.config);
     const blockchainClient = opts.blockchainClient ??
-      new BlockchainProvider(opts.config);
+      new DefaultBlockchainClient(opts.config);
     const blockchainMonitor = opts.blockchainMonitor ??
       new BlockchainMonitor(opts.config, blockchainClient);
     const pluginManager = opts.pluginManager ??
-      new PluginManager(opts.config, blockchainClient, blockchainMonitor);
+      new PluginManager(opts.config, blockchainProvider, blockchainMonitor);
 
     pluginManager.addEventListener("plugin:error", (e) => this.#bubbleEvent(e));
 

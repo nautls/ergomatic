@@ -11,27 +11,29 @@ import { BlockchainClient } from "./blockchain_client.ts";
 import { ExplorerClient } from "./explorer.ts";
 import { NodeClient } from "./node.ts";
 
-export class BlockchainProvider extends Component implements BlockchainClient {
+/**
+ * BlockchainProvider is a blockchain client that is exclusively used by plugins.
+ * The API is intentionally restricted to prevent plugins issuing excessive API requests
+ * that are instead provided to plugins via a snapshot of the blockchain state.
+ */
+export interface BlockchainProvider {
+  submitTx(signedTx: SignedTransaction): Promise<TransactionId>;
+
+  getBoxesByTokenId<T extends AmountType = string>(
+    tokenId: TokenId,
+  ): AsyncGenerator<Box<T>[]>;
+}
+
+export class DefaultBlockchainProvider extends Component
+  implements BlockchainProvider {
   readonly #explorer: BlockchainClient;
   readonly #node: BlockchainClient;
 
   constructor(config: ErgomaticConfig) {
-    super(config, "BlockchainProvider");
+    super(config, "DefaultBlockchainProvider");
 
     this.#explorer = new ExplorerClient(config);
     this.#node = new NodeClient(config);
-  }
-
-  getBlock(height: number): Promise<unknown> {
-    return this.#node.getBlock(height);
-  }
-
-  getCurrentHeight(): Promise<number> {
-    return this.#node.getCurrentHeight();
-  }
-
-  getMempool(): Promise<SignedTransaction[]> {
-    return this.#node.getMempool();
   }
 
   submitTx(signedTx: SignedTransaction): Promise<TransactionId> {

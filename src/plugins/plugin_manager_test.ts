@@ -14,18 +14,22 @@ import {
   BlockchainClient,
   BlockchainMonitor,
   BlockchainProvider,
+  DefaultBlockchainClient,
+  DefaultBlockchainProvider,
 } from "../blockchain/mod.ts";
 import { testConfig } from "../_testing.ts";
 import { mkTestBlockchainMonitor } from "../blockchain/_testing.ts";
 
 describe("PluginManager", () => {
   let config: ErgomaticConfig;
+  let blockchainProvider: BlockchainProvider;
   let blockchainClient: BlockchainClient;
   let blockchainMonitor: BlockchainMonitor;
 
   beforeEach(() => {
     config = testConfig();
-    blockchainClient = new BlockchainProvider(config);
+    blockchainProvider = new DefaultBlockchainProvider(config);
+    blockchainClient = new DefaultBlockchainClient(config);
     blockchainMonitor = mkTestBlockchainMonitor(config, blockchainClient);
   });
 
@@ -37,7 +41,7 @@ describe("PluginManager", () => {
         () =>
           new PluginManager(
             config,
-            blockchainClient,
+            blockchainProvider,
             blockchainMonitor,
             testPluginMap,
           ),
@@ -51,7 +55,7 @@ describe("PluginManager", () => {
 
       new PluginManager(
         config,
-        blockchainClient,
+        blockchainProvider,
         blockchainMonitor,
         testPluginMap,
       );
@@ -59,7 +63,7 @@ describe("PluginManager", () => {
     it("should create PluginManager instance", () => {
       new PluginManager(
         config,
-        blockchainClient,
+        blockchainProvider,
         blockchainMonitor,
         testPluginMap,
       );

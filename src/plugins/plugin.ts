@@ -1,5 +1,5 @@
 import { Logger } from "std/log/mod.ts";
-import { BlockchainClient } from "../blockchain/mod.ts";
+import { BlockchainProvider } from "../blockchain/mod.ts";
 import { SignedTransaction } from "@fleet-sdk/common";
 
 export interface PluginDescriptor {
@@ -21,7 +21,7 @@ export type PluginConstructor = {
 export interface PluginArgs<T = any> {
   config: T;
   logger: Logger;
-  blockchainClient: BlockchainClient;
+  blockchainProvider: BlockchainProvider;
 }
 
 export abstract class Plugin<T = unknown> {
@@ -31,12 +31,12 @@ export abstract class Plugin<T = unknown> {
   /** Logger configured to log output of this plugin. */
   protected readonly logger: Logger;
 
-  protected readonly blockchainClient: BlockchainClient;
+  protected readonly blockchainProvider: BlockchainProvider;
 
-  constructor({ config, logger, blockchainClient }: PluginArgs<T>) {
+  constructor({ config, logger, blockchainProvider }: PluginArgs<T>) {
     this.config = config;
     this.logger = logger;
-    this.blockchainClient = blockchainClient;
+    this.blockchainProvider = blockchainProvider;
   }
 
   /**

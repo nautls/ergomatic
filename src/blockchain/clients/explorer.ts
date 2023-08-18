@@ -35,7 +35,7 @@ export class ExplorerClient extends Component implements BlockchainClient {
     throw new Error("Method not implemented.");
   }
 
-  getMempool(): Promise<SignedTransaction[]> {
+  getMempool(): AsyncGenerator<SignedTransaction[]> {
     throw new Error(`${this.name} does not support getMempool operation`);
   }
 

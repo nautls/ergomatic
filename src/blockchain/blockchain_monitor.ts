@@ -61,7 +61,15 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
   async #monitor() {
     this.logger.debug("Gathering blockchain state");
 
-    const mempool = await this.#blockchainClient.getMempool();
+    const mempool = [];
+    // the loop following this where we go through all the mempool txs could
+    // go in here as well but each time the `monitor:mempool-tx` event is raised
+    // it could provide a different mempool snapshot to plugins.
+    //
+    // instead, collect the full mempool first so the plugins can receive a full consistent snapshot.
+    for await (const page of this.#blockchainClient.getMempool()) {
+      mempool.push(...page);
+    }
 
     for (const tx of mempool) {
       if (!this.#state.mempoolTxDelivery[tx.id]) {

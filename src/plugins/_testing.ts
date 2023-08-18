@@ -4,7 +4,11 @@ import { _internals, ManagedPlugin, PluginState } from "./plugin_manager.ts";
 import { ErgomaticConfig } from "../config.ts";
 import { PluginManager } from "./mod.ts";
 import { stub } from "std/testing/mock.ts";
-import { BlockchainClient, BlockchainProvider } from "../blockchain/mod.ts";
+import {
+  BlockchainProvider,
+  DefaultBlockchainClient,
+  DefaultBlockchainProvider,
+} from "../blockchain/mod.ts";
 import { testConfig } from "../_testing.ts";
 import { mkTestBlockchainMonitor } from "../blockchain/_testing.ts";
 
@@ -35,13 +39,14 @@ export function mkTestPluginManager(
 
   const config = opts?.config ?? testConfig();
   const pluginMap = opts?.pluginMap ?? testPluginMap;
-  const client = new BlockchainProvider(config);
+  const provider = new DefaultBlockchainProvider(config);
+  const client = new DefaultBlockchainClient(config);
   const monitor = mkTestBlockchainMonitor(config, client);
 
   return {
     pluginManager: new PluginManager(
       config,
-      client,
+      provider,
       monitor,
       pluginMap,
     ),
@@ -54,7 +59,7 @@ export function mkTestManagedPlugin(
 ): ManagedPlugin {
   const plugin = new TestPlugin({
     logger: getLogger(),
-    blockchainClient: {} as BlockchainClient, // TODO
+    blockchainProvider: {} as BlockchainProvider, // TODO
     config: {},
   });
 
