@@ -3,6 +3,11 @@ import { Component } from "../component.ts";
 import { ErgomaticConfig } from "../config.ts";
 import { BlockchainClient } from "./clients/mod.ts";
 
+export interface BlockchainSnapshot {
+  height: number;
+  mempool: SignedTransaction[];
+}
+
 interface MonitorState {
   currentHeight: number;
   /** map of txid -> bool indicating if mempool tx has been passed to plugins */
@@ -10,13 +15,16 @@ interface MonitorState {
   /** map of txid -> int indicating the number of re-checks */
   mempoolTxChecks: Record<TransactionId, number>;
   pastMempoolTxIds: TransactionId[];
+  lastPeerMsgTimestamp: number;
 }
 
+type MonitorEvent<T> = CustomEvent<[T, Readonly<BlockchainSnapshot>]>;
+
 interface BlockchainMonitorEvent {
-  "monitor:mempool-tx": CustomEvent<SignedTransaction>;
-  "monitor:mempool-tx-drop": CustomEvent<SignedTransaction>;
-  "monitor:included-tx": CustomEvent<SignedTransaction>;
-  "monitor:new-block": CustomEvent<unknown>;
+  "monitor:mempool-tx": MonitorEvent<SignedTransaction>;
+  "monitor:mempool-tx-drop": MonitorEvent<SignedTransaction>;
+  "monitor:included-tx": MonitorEvent<SignedTransaction>;
+  "monitor:new-block": MonitorEvent<unknown>;
 }
 
 export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
@@ -42,6 +50,7 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
       mempoolTxDelivery: {},
       mempoolTxChecks: {},
       pastMempoolTxIds: [],
+      lastPeerMsgTimestamp: 0,
     };
   }
 
@@ -61,6 +70,13 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
   async #monitor() {
     this.logger.debug("Gathering blockchain state");
 
+    const { currentHeight, lastPeerMsgTimestamp } = await this.#blockchainClient
+      .getInfo();
+
+    if (lastPeerMsgTimestamp === this.#state.lastPeerMsgTimestamp) {
+      return;
+    }
+
     const mempool = [];
     // the loop following this where we go through all the mempool txs could
     // go in here as well but each time the `monitor:mempool-tx` event is raised
@@ -71,12 +87,17 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
       mempool.push(...page);
     }
 
+    const snapshot: Readonly<BlockchainSnapshot> = Object.freeze({
+      height: currentHeight,
+      mempool,
+    });
+
     for (const tx of mempool) {
       if (!this.#state.mempoolTxDelivery[tx.id]) {
         this.#state.mempoolTxDelivery[tx.id] = true;
 
         this.dispatchEvent(
-          new CustomEvent("monitor:mempool-tx", { detail: tx }),
+          new CustomEvent("monitor:mempool-tx", { detail: [tx, snapshot] }),
         );
       }
 
@@ -98,22 +119,20 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
 
     this.#state.pastMempoolTxIds = mempool.map((tx) => tx.id);
 
-    const currentHeight = await this.#blockchainClient.getCurrentHeight();
-
     if (currentHeight > this.#state.currentHeight) {
       const newBlock = await this.#blockchainClient.getBlock(
         currentHeight,
       ) as any;
 
       this.dispatchEvent(
-        new CustomEvent("monitor:new-block", { detail: newBlock }),
+        new CustomEvent("monitor:new-block", { detail: [newBlock, snapshot] }),
       );
 
       this.#state.currentHeight = currentHeight;
 
       for (const tx of newBlock.blockTransactions) {
         this.dispatchEvent(
-          new CustomEvent("monitor:included-tx", { detail: tx }),
+          new CustomEvent("monitor:included-tx", { detail: [tx, snapshot] }),
         );
 
         // stop tracking mempool delivery for this txid

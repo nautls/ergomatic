@@ -1,5 +1,5 @@
 import { Logger } from "std/log/mod.ts";
-import { BlockchainProvider } from "../blockchain/mod.ts";
+import { BlockchainProvider, BlockchainSnapshot } from "../blockchain/mod.ts";
 import { SignedTransaction } from "@fleet-sdk/common";
 
 export interface PluginDescriptor {
@@ -56,22 +56,34 @@ export abstract class Plugin<T = unknown> {
   }
 
   /** Called when a new transaction is added to mempool. */
-  onMempoolTx(_tx: SignedTransaction): Promise<void> {
+  onMempoolTx(
+    _tx: SignedTransaction,
+    _snapshot: Readonly<BlockchainSnapshot>,
+  ): Promise<void> {
     return Promise.resolve();
   }
 
   /** Called when a transaction is dropped from mempool. */
-  onMempoolTxDrop(_tx: SignedTransaction): Promise<void> {
+  onMempoolTxDrop(
+    _tx: SignedTransaction,
+    _snapshot: Readonly<BlockchainSnapshot>,
+  ): Promise<void> {
     return Promise.resolve();
   }
 
   /** Called when a transaction has been included in a block. */
-  onIncludedTx(_tx: SignedTransaction): Promise<void> {
+  onIncludedTx(
+    _tx: SignedTransaction,
+    _snapshot: Readonly<BlockchainSnapshot>,
+  ): Promise<void> {
     return Promise.resolve();
   }
 
   /** Called when a new block is added to the blockchain. */
-  onNewBlock(block: any): Promise<void> {
+  onNewBlock(
+    _block: any,
+    _snapshot: Readonly<BlockchainSnapshot>,
+  ): Promise<void> {
     return Promise.resolve();
   }
 

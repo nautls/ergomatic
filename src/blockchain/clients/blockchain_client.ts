@@ -23,10 +23,15 @@ export interface RestrictedBlockchainClient {
   ): AsyncGenerator<Box<T>[]>;
 }
 
+export interface BlockchainInfo {
+  currentHeight: number;
+  lastPeerMsgTimestamp?: number;
+}
+
 export interface BlockchainClient extends RestrictedBlockchainClient {
   getMempool(): AsyncGenerator<SignedTransaction[]>;
 
-  getCurrentHeight(): Promise<number>;
+  getInfo(): Promise<BlockchainInfo>;
 
   getBlock(height: number): Promise<unknown>;
 }
@@ -47,8 +52,8 @@ export class DefaultBlockchainClient extends Component
     return this.#node.getBlock(height);
   }
 
-  getCurrentHeight(): Promise<number> {
-    return this.#node.getCurrentHeight();
+  getInfo(): Promise<BlockchainInfo> {
+    return this.#node.getInfo();
   }
 
   getMempool(): AsyncGenerator<SignedTransaction[]> {

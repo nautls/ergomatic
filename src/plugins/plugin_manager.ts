@@ -133,7 +133,7 @@ export class PluginManager extends Component<PluginManagerEvent> {
       "monitor:mempool-tx",
       ({ detail }) =>
         this.#pluginsByState(PluginState.Running).forEach((p) =>
-          p.plugin.onMempoolTx(detail).catch((e) =>
+          p.plugin.onMempoolTx(...detail).catch((e) =>
             this.#handlePluginError(p, e)
           )
         ),
@@ -142,7 +142,7 @@ export class PluginManager extends Component<PluginManagerEvent> {
       "monitor:mempool-tx-drop",
       ({ detail }) =>
         this.#pluginsByState(PluginState.Running).forEach((p) =>
-          p.plugin.onMempoolTxDrop(detail).catch((e) =>
+          p.plugin.onMempoolTxDrop(...detail).catch((e) =>
             this.#handlePluginError(p, e)
           )
         ),
@@ -151,7 +151,7 @@ export class PluginManager extends Component<PluginManagerEvent> {
       "monitor:included-tx",
       ({ detail }) =>
         this.#pluginsByState(PluginState.Running).forEach((p) =>
-          p.plugin.onIncludedTx(detail).catch((e) =>
+          p.plugin.onIncludedTx(...detail).catch((e) =>
             this.#handlePluginError(p, e)
           )
         ),
@@ -160,7 +160,7 @@ export class PluginManager extends Component<PluginManagerEvent> {
       "monitor:new-block",
       ({ detail }) =>
         this.#pluginsByState(PluginState.Running).forEach((p) =>
-          p.plugin.onNewBlock(detail).catch((e) =>
+          p.plugin.onNewBlock(...detail).catch((e) =>
             this.#handlePluginError(p, e)
           )
         ),

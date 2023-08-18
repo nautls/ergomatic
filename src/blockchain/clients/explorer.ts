@@ -6,7 +6,7 @@ import {
   TransactionId,
 } from "@fleet-sdk/common";
 import axios, { AxiosInstance } from "axios";
-import { BlockchainClient } from "./blockchain_client.ts";
+import { BlockchainClient, BlockchainInfo } from "./blockchain_client.ts";
 import { ErgomaticConfig } from "../../config.ts";
 import { Component } from "../../component.ts";
 
@@ -31,7 +31,7 @@ export class ExplorerClient extends Component implements BlockchainClient {
     throw new Error("Method not implemented.");
   }
 
-  getCurrentHeight(): Promise<number> {
+  getInfo(): Promise<BlockchainInfo> {
     throw new Error("Method not implemented.");
   }
 

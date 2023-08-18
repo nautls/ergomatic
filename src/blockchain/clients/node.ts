@@ -5,7 +5,7 @@ import {
   TokenId,
   TransactionId,
 } from "@fleet-sdk/common";
-import { BlockchainClient } from "./blockchain_client.ts";
+import { BlockchainClient, BlockchainInfo } from "./blockchain_client.ts";
 import { Component } from "../../component.ts";
 import { ErgomaticConfig } from "../../config.ts";
 import axios, { AxiosInstance } from "axios";
@@ -27,18 +27,25 @@ export class NodeClient extends Component implements BlockchainClient {
     throw new Error("Method not implemented.");
   }
 
-  getCurrentHeight(): Promise<number> {
-    throw new Error("Method not implemented.");
+  async getInfo(): Promise<BlockchainInfo> {
+    const response = await this.#http.get(
+      "/info",
+      this.#defaultRequestConfig,
+    );
+
+    return response.data;
   }
 
-  submitTx(
+  async submitTx(
     signedTx: SignedTransaction,
   ): Promise<TransactionId> {
-    return this.#http.post(
+    const response = await this.#http.post(
       "/transactions",
       signedTx,
       this.#defaultRequestConfig,
     );
+
+    return response.data;
   }
 
   // deno-lint-ignore require-yield
