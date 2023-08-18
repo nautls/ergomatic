@@ -14,6 +14,7 @@ import {
 import { ExplorerClient } from "./explorer.ts";
 import { NodeClient } from "./node.ts";
 
+/** Restricted blockchain client used by plugins */
 export class BlockchainProvider extends Component
   implements RestrictedBlockchainClient {
   readonly #explorer: BlockchainClient;
