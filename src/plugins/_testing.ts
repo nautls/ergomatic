@@ -4,8 +4,12 @@ import { _internals, ManagedPlugin, PluginState } from "./plugin_manager.ts";
 import { ErgomaticConfig } from "../config.ts";
 import { PluginManager } from "./mod.ts";
 import { stub } from "std/testing/mock.ts";
-import { BlockchainClient, BlockchainProvider } from "../blockchain/mod.ts";
+import {
+  BlockchainProvider,
+  DefaultBlockchainClient,
+} from "../blockchain/mod.ts";
 import { testConfig } from "../_testing.ts";
+import { mkTestBlockchainMonitor } from "../blockchain/_testing.ts";
 
 export class TestPlugin extends Plugin {
   get descriptor(): PluginDescriptor {
@@ -25,7 +29,7 @@ export function mkTestPluginManager(
   opts?: TestPluginManagerOpts,
 ) {
   const pluginsStub = opts?.plugins?.length
-    ? stub(_internals, "plugins", () => opts?.plugins!)
+    ? stub(_internals, "managedPlugins", () => opts?.plugins!)
     : null;
 
   const cleanup = () => {
@@ -34,11 +38,15 @@ export function mkTestPluginManager(
 
   const config = opts?.config ?? testConfig();
   const pluginMap = opts?.pluginMap ?? testPluginMap;
+  const provider = new BlockchainProvider(config);
+  const client = new DefaultBlockchainClient(config);
+  const monitor = mkTestBlockchainMonitor(config, client);
 
   return {
     pluginManager: new PluginManager(
       config,
-      new BlockchainProvider(config),
+      provider,
+      monitor,
       pluginMap,
     ),
     cleanup,
@@ -50,7 +58,7 @@ export function mkTestManagedPlugin(
 ): ManagedPlugin {
   const plugin = new TestPlugin({
     logger: getLogger(),
-    blockchainClient: {} as BlockchainClient, // TODO
+    blockchainProvider: {} as BlockchainProvider, // TODO
     config: {},
   });
 

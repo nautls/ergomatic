@@ -1,5 +1,6 @@
 import { Logger } from "std/log/mod.ts";
-import { BlockchainClient } from "../blockchain/mod.ts";
+import { BlockchainProvider, BlockchainSnapshot } from "../blockchain/mod.ts";
+import { SignedTransaction } from "@fleet-sdk/common";
 
 export interface PluginDescriptor {
   /** User friendly name of the plugin. */
@@ -20,7 +21,7 @@ export type PluginConstructor = {
 export interface PluginArgs<T = any> {
   config: T;
   logger: Logger;
-  blockchainClient: BlockchainClient;
+  blockchainProvider: BlockchainProvider;
 }
 
 export abstract class Plugin<T = unknown> {
@@ -30,12 +31,12 @@ export abstract class Plugin<T = unknown> {
   /** Logger configured to log output of this plugin. */
   protected readonly logger: Logger;
 
-  protected readonly blockchainClient: BlockchainClient;
+  protected readonly blockchainProvider: BlockchainProvider;
 
-  constructor({ config, logger, blockchainClient }: PluginArgs<T>) {
+  constructor({ config, logger, blockchainProvider }: PluginArgs<T>) {
     this.config = config;
     this.logger = logger;
-    this.blockchainClient = blockchainClient;
+    this.blockchainProvider = blockchainProvider;
   }
 
   /**
@@ -51,6 +52,38 @@ export abstract class Plugin<T = unknown> {
    * Plugin clean-up should be done here.
    */
   onStop(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  /** Called when a new transaction is added to mempool. */
+  onMempoolTx(
+    _tx: SignedTransaction,
+    _snapshot: Readonly<BlockchainSnapshot>,
+  ): Promise<void> {
+    return Promise.resolve();
+  }
+
+  /** Called when a transaction is dropped from mempool. */
+  onMempoolTxDrop(
+    _tx: SignedTransaction,
+    _snapshot: Readonly<BlockchainSnapshot>,
+  ): Promise<void> {
+    return Promise.resolve();
+  }
+
+  /** Called when a transaction has been included in a block. */
+  onIncludedTx(
+    _tx: SignedTransaction,
+    _snapshot: Readonly<BlockchainSnapshot>,
+  ): Promise<void> {
+    return Promise.resolve();
+  }
+
+  /** Called when a new block is added to the blockchain. */
+  onNewBlock(
+    _block: any,
+    _snapshot: Readonly<BlockchainSnapshot>,
+  ): Promise<void> {
     return Promise.resolve();
   }
 

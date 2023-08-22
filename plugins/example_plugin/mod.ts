@@ -25,7 +25,9 @@ export class ExamplePlugin extends Plugin<ExamplePluginConfig> {
     const { tokenId, exitAtPage } = this.config;
     let currentPage = 0;
 
-    for await (const page of this.blockchainClient.getBoxesByTokenId(tokenId)) {
+    for await (
+      const page of this.blockchainProvider.getBoxesByTokenId(tokenId)
+    ) {
       currentPage++;
 
       this.logger.info(

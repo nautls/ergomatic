@@ -1,2 +1,2 @@
-export * from "./blockchain_provider.ts";
-export * from "./blockchain_client.ts";
+export * from "./clients/mod.ts";
+export * from "./blockchain_monitor.ts";
