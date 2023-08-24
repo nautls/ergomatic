@@ -136,24 +136,9 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
     this.#state.pastMempoolTxIds = mempool.map((tx) => tx.id);
 
     if (currentHeight > this.#state.currentHeight) {
-      const newBlock = await this.#blockchainClient.getBlock(
-        currentHeight,
-      ) as any;
-
-      this.dispatchEvent(
-        new CustomEvent("monitor:new-block", { detail: [newBlock, snapshot] }),
-      );
+      this.#handleNewHeight(currentHeight, snapshot);
 
       this.#state.currentHeight = currentHeight;
-
-      for (const tx of newBlock.blockTransactions) {
-        this.dispatchEvent(
-          new CustomEvent("monitor:included-tx", { detail: [tx, snapshot] }),
-        );
-
-        // stop tracking deliver and drop checks for this txid
-        delete mempoolTxState[tx.id];
-      }
     }
 
     for (const txId of Object.keys(mempoolTxState)) {
@@ -168,6 +153,40 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
         delete mempoolTxState[txId];
       } else {
         mempoolTxState[txId].dropChecks += 1;
+      }
+    }
+  }
+
+  async #handleNewHeight(
+    height: number,
+    currentSnapshot: Readonly<BlockchainSnapshot>,
+  ): Promise<void> {
+    const blockIds = await this.#blockchainClient.getBlockIdsByHeight(height);
+    const blockPromises = blockIds.map((blockId) =>
+      this.#blockchainClient.getBlockById(blockId)
+    );
+    const blocks = await Promise.all(blockPromises);
+
+    for (const block of blocks) {
+      if (!block) {
+        continue;
+      }
+
+      this.dispatchEvent(
+        new CustomEvent("monitor:new-block", {
+          detail: [block, currentSnapshot],
+        }),
+      );
+
+      for (const tx of Object.values(block.blockTransactions.transactions)) {
+        this.dispatchEvent(
+          new CustomEvent("monitor:included-tx", {
+            detail: [tx, currentSnapshot],
+          }),
+        );
+
+        // stop tracking delivery and drop checks for this txid
+        delete this.#state.mempoolTxState[tx.id];
       }
     }
   }

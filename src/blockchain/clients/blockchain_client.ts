@@ -1,5 +1,7 @@
 import {
   AmountType,
+  Block,
+  BlockHeaderId,
   Box,
   SignedTransaction,
   TokenId,
@@ -33,7 +35,9 @@ export interface BlockchainClient extends RestrictedBlockchainClient {
 
   getInfo(): Promise<BlockchainInfo>;
 
-  getBlock(height: number): Promise<unknown>;
+  getBlockIdsByHeight(height: number): Promise<BlockHeaderId[]>;
+
+  getBlockById(id: BlockHeaderId): Promise<Block | undefined>;
 }
 
 export class DefaultBlockchainClient extends Component
@@ -48,8 +52,12 @@ export class DefaultBlockchainClient extends Component
     this.#node = new NodeClient(config);
   }
 
-  getBlock(height: number): Promise<unknown> {
-    return this.#node.getBlock(height);
+  getBlockIdsByHeight(height: number): Promise<string[]> {
+    return this.#node.getBlockIdsByHeight(height);
+  }
+
+  getBlockById(id: BlockHeaderId): Promise<Block | undefined> {
+    return this.#node.getBlockById(id);
   }
 
   getInfo(): Promise<BlockchainInfo> {
