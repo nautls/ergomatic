@@ -29,7 +29,7 @@ export class ExplorerClient extends Component implements BlockchainClient {
     });
   }
 
-  getBlockIdsByHeight(_height: number): Promise<string[]> {
+  getBlockIdsByHeight(_height: number): Promise<BlockHeaderId[]> {
     throw new Error("Method not implemented.");
   }
 

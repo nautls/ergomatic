@@ -52,7 +52,7 @@ export class DefaultBlockchainClient extends Component
     this.#node = new NodeClient(config);
   }
 
-  getBlockIdsByHeight(height: number): Promise<string[]> {
+  getBlockIdsByHeight(height: number): Promise<BlockHeaderId[]> {
     return this.#node.getBlockIdsByHeight(height);
   }
 
