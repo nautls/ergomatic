@@ -1,4 +1,4 @@
-import { SignedTransaction, TransactionId } from "@fleet-sdk/common";
+import { Block, SignedTransaction, TransactionId } from "@fleet-sdk/common";
 import { Component } from "../component.ts";
 import { ErgomaticConfig } from "../config.ts";
 import { BlockchainClient } from "./clients/mod.ts";
@@ -32,7 +32,7 @@ interface BlockchainMonitorEvent {
   "monitor:mempool-tx": MonitorEvent<SignedTransaction>;
   "monitor:mempool-tx-drop": MonitorEvent<SignedTransaction>;
   "monitor:included-tx": MonitorEvent<SignedTransaction>;
-  "monitor:new-block": MonitorEvent<unknown>;
+  "monitor:new-block": MonitorEvent<Block>;
 }
 
 export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
