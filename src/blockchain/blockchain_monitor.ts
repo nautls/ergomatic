@@ -141,18 +141,18 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
       this.#state.currentHeight = currentHeight;
     }
 
-    for (const txId of Object.keys(mempoolTxState)) {
+    for (const txState of Object.values(mempoolTxState)) {
       // if a tx is not included in a block in dropChecks * `n` seconds,
       // then it's probably dropped from the mempool
-      if (mempoolTxState[txId].dropChecks > this.#maxMempoolTxChecks) {
+      if (txState.dropChecks > this.#maxMempoolTxChecks) {
         this.dispatchEvent(
           new CustomEvent("monitor:mempool-tx-drop", {
-            detail: [mempoolTxState[txId].tx, snapshot],
+            detail: [txState.tx, snapshot],
           }),
         );
-        delete mempoolTxState[txId];
+        delete mempoolTxState[txState.tx.id];
       } else {
-        mempoolTxState[txId].dropChecks += 1;
+        txState.dropChecks += 1;
       }
     }
   }
