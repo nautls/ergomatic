@@ -1,6 +1,6 @@
 import { Logger } from "std/log/mod.ts";
 import { BlockchainProvider, BlockchainSnapshot } from "../blockchain/mod.ts";
-import { SignedTransaction } from "@fleet-sdk/common";
+import { Block, SignedTransaction } from "@fleet-sdk/common";
 
 export interface PluginDescriptor {
   /** User friendly name of the plugin. */
@@ -81,7 +81,7 @@ export abstract class Plugin<T = unknown> {
 
   /** Called when a new block is added to the blockchain. */
   onNewBlock(
-    _block: any,
+    _block: Block,
     _snapshot: Readonly<BlockchainSnapshot>,
   ): Promise<void> {
     return Promise.resolve();

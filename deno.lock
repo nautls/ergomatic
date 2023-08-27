@@ -223,6 +223,7 @@
   "npm": {
     "specifiers": {
       "@fleet-sdk/common@0.1.3": "@fleet-sdk/common@0.1.3",
+      "@fleet-sdk/common@0.2.2": "@fleet-sdk/common@0.2.2",
       "axios@1.4.0": "axios@1.4.0",
       "lilconfig@2.1.0": "lilconfig@2.1.0",
       "lodash.merge@4.6.2": "lodash.merge@4.6.2"
@@ -230,6 +231,10 @@
     "packages": {
       "@fleet-sdk/common@0.1.3": {
         "integrity": "sha512-gYEkHhgGpgIcmCL3nCw8E9zHkT2WLmR+mPdxFlUE6fwcwISURbJrP6W9mF7D5Y0ShAP5Is2w3edh7AyIc7ctIQ==",
+        "dependencies": {}
+      },
+      "@fleet-sdk/common@0.2.2": {
+        "integrity": "sha512-wDBCKgPVKy2Fsr0eetjlqLZQEqSYXJ3F9AXF/ai2h8JqNOOkJTxyL/Vj6D4CnY6Djiwz3AKd4h9DduRhGlj8pQ==",
         "dependencies": {}
       },
       "asynckit@0.4.0": {

@@ -1,4 +1,4 @@
-import { SignedTransaction, TransactionId } from "@fleet-sdk/common";
+import { Block, SignedTransaction, TransactionId } from "@fleet-sdk/common";
 import { Component } from "../component.ts";
 import { ErgomaticConfig } from "../config.ts";
 import { BlockchainClient } from "./clients/mod.ts";
@@ -8,12 +8,20 @@ export interface BlockchainSnapshot {
   mempool: SignedTransaction[];
 }
 
+interface MempoolTxState {
+  /** indicates if mempool tx has been passed to plugins */
+  delivered: boolean;
+  /**
+   * number of checks since the transaction appeared in mempool AND wasn't included in a block.
+   * used to determine if a tx has been dropped from the mempool.
+   */
+  dropChecks: number;
+  tx: SignedTransaction;
+}
+
 interface MonitorState {
   currentHeight: number;
-  /** map of txid -> bool indicating if mempool tx has been passed to plugins */
-  mempoolTxDelivery: Record<TransactionId, boolean>;
-  /** map of txid -> int indicating the number of re-checks */
-  mempoolTxChecks: Record<TransactionId, number>;
+  mempoolTxState: Record<TransactionId, MempoolTxState>;
   pastMempoolTxIds: TransactionId[];
   lastPeerMsgTimestamp: number;
 }
@@ -24,7 +32,7 @@ interface BlockchainMonitorEvent {
   "monitor:mempool-tx": MonitorEvent<SignedTransaction>;
   "monitor:mempool-tx-drop": MonitorEvent<SignedTransaction>;
   "monitor:included-tx": MonitorEvent<SignedTransaction>;
-  "monitor:new-block": MonitorEvent<unknown>;
+  "monitor:new-block": MonitorEvent<Block>;
 }
 
 export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
@@ -47,8 +55,7 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
     this.#blockchainClient = blockchainClient;
     this.#state = {
       currentHeight: 0,
-      mempoolTxDelivery: {},
-      mempoolTxChecks: {},
+      mempoolTxState: {},
       pastMempoolTxIds: [],
       lastPeerMsgTimestamp: 0,
     };
@@ -94,66 +101,92 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
       mempool,
     });
 
-    for (const tx of mempool) {
-      if (!this.#state.mempoolTxDelivery[tx.id]) {
-        this.#state.mempoolTxDelivery[tx.id] = true;
+    const { mempoolTxState } = this.#state;
 
+    for (const tx of mempool) {
+      if (!mempoolTxState[tx.id]) {
+        mempoolTxState[tx.id] = {
+          delivered: false,
+          dropChecks: 0,
+          tx,
+        };
+      }
+
+      if (!mempoolTxState[tx.id].delivered) {
         this.dispatchEvent(
           new CustomEvent("monitor:mempool-tx", { detail: [tx, snapshot] }),
         );
+
+        mempoolTxState[tx.id].delivered = true;
       }
 
       this.#state.pastMempoolTxIds = this.#state.pastMempoolTxIds.filter((
         txId,
       ) => txId !== tx.id);
 
-      // remove txid from undefined state transactions map if present
-      // this resets the mempool drop detection counter for this txid
-      delete this.#state.mempoolTxChecks[tx.id];
+      mempoolTxState[tx.id].dropChecks = 0;
     }
 
     // if tx was present in previous mempool, but not in the
     // current, it may have been dropped or included in a block
     for (const txId of this.#state.pastMempoolTxIds) {
-      this.#state.mempoolTxChecks[txId] =
-        (this.#state.mempoolTxChecks[txId] ?? 0) + 1;
+      mempoolTxState[txId].dropChecks += 1;
     }
 
     this.#state.pastMempoolTxIds = mempool.map((tx) => tx.id);
 
     if (currentHeight > this.#state.currentHeight) {
-      const newBlock = await this.#blockchainClient.getBlock(
-        currentHeight,
-      ) as any;
-
-      this.dispatchEvent(
-        new CustomEvent("monitor:new-block", { detail: [newBlock, snapshot] }),
-      );
+      this.#handleNewHeight(currentHeight, snapshot);
 
       this.#state.currentHeight = currentHeight;
-
-      for (const tx of newBlock.blockTransactions) {
-        this.dispatchEvent(
-          new CustomEvent("monitor:included-tx", { detail: [tx, snapshot] }),
-        );
-
-        // stop tracking mempool delivery for this txid
-        delete this.#state.mempoolTxDelivery[tx.id];
-
-        // prevent `onMempoolTxDrop` event for this txid as
-        // it is now included in a block
-        delete this.#state.mempoolTxChecks[tx.id];
-      }
     }
 
-    for (const txId of Object.keys(this.#state.mempoolTxChecks)) {
+    for (const txState of Object.values(mempoolTxState)) {
       // if a tx is not included in a block in dropChecks * `n` seconds,
       // then it's probably dropped from the mempool
-      if (this.#state.mempoolTxChecks[txId] > this.#maxMempoolTxChecks) {
-        // TODO raise mempool dropped, so we still need to keep track of txns not just the id?
-        delete this.#state.mempoolTxChecks[txId];
+      if (txState.dropChecks > this.#maxMempoolTxChecks) {
+        this.dispatchEvent(
+          new CustomEvent("monitor:mempool-tx-drop", {
+            detail: [txState.tx, snapshot],
+          }),
+        );
+        delete mempoolTxState[txState.tx.id];
       } else {
-        this.#state.mempoolTxChecks[txId] += 1;
+        txState.dropChecks += 1;
+      }
+    }
+  }
+
+  async #handleNewHeight(
+    height: number,
+    currentSnapshot: Readonly<BlockchainSnapshot>,
+  ): Promise<void> {
+    const blockIds = await this.#blockchainClient.getBlockIdsByHeight(height);
+    const blockPromises = blockIds.map((blockId) =>
+      this.#blockchainClient.getBlockById(blockId)
+    );
+    const blocks = await Promise.all(blockPromises);
+
+    for (const block of blocks) {
+      if (!block) {
+        continue;
+      }
+
+      this.dispatchEvent(
+        new CustomEvent("monitor:new-block", {
+          detail: [block, currentSnapshot],
+        }),
+      );
+
+      for (const tx of Object.values(block.blockTransactions.transactions)) {
+        this.dispatchEvent(
+          new CustomEvent("monitor:included-tx", {
+            detail: [tx, currentSnapshot],
+          }),
+        );
+
+        // stop tracking delivery and drop checks for this txid
+        delete this.#state.mempoolTxState[tx.id];
       }
     }
   }

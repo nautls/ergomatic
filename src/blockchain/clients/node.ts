@@ -1,5 +1,7 @@
 import {
   AmountType,
+  Block,
+  BlockHeaderId,
   Box,
   SignedTransaction,
   TokenId,
@@ -23,8 +25,22 @@ export class NodeClient extends Component implements BlockchainClient {
     });
   }
 
-  getBlock(_height: number): Promise<unknown> {
-    throw new Error("Method not implemented.");
+  async getBlockIdsByHeight(height: number): Promise<BlockHeaderId[]> {
+    const response = await this.#http.get(
+      `/headers/at/${height}`,
+      this.#defaultRequestConfig,
+    );
+
+    return response.data;
+  }
+
+  async getBlockById(id: BlockHeaderId): Promise<Block | undefined> {
+    const response = await this.#http.get(
+      `/blocks/${id}`,
+      this.#defaultRequestConfig,
+    );
+
+    return response.data;
   }
 
   async getInfo(): Promise<BlockchainInfo> {

@@ -1,5 +1,7 @@
 import {
   AmountType,
+  Block,
+  BlockHeaderId,
   Box,
   SignedTransaction,
   TokenId,
@@ -27,7 +29,11 @@ export class ExplorerClient extends Component implements BlockchainClient {
     });
   }
 
-  getBlock(_height: number): Promise<unknown> {
+  getBlockIdsByHeight(_height: number): Promise<BlockHeaderId[]> {
+    throw new Error("Method not implemented.");
+  }
+
+  getBlockById(_id: BlockHeaderId): Promise<Block | undefined> {
     throw new Error("Method not implemented.");
   }
 
