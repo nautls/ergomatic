@@ -221,7 +221,11 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
       const block = blocks[i];
 
       if (!block) {
-        this.logger.debug(`failed to retrieve a block with id: ${blockIds[i]}`);
+        this.logger.warning(
+          `failed to retrieve a block with id: ${
+            blockIds[i]
+          }, it might be skipped!`,
+        );
 
         continue;
       }
@@ -245,7 +249,9 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
 
         // stop tracking delivery and drop checks for this txid
         delete this.#state.mempoolTxState[tx.id];
-        this.logger.debug(`mempool tx removed from state tracking: ${tx.id}`);
+        this.logger.debug(
+          `mempool tx removed from state tracking as it was included in block: ${tx.id}`,
+        );
       }
     }
   }
