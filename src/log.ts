@@ -38,8 +38,6 @@ export function createLogger(name: string, level: LevelName) {
       maxBytes: mbToBytes(100),
     });
 
-    fileHandler.setup();
-
     logHandlers.push(
       new handlers.ConsoleHandler(level, {
         formatter,
@@ -47,6 +45,8 @@ export function createLogger(name: string, level: LevelName) {
       fileHandler,
     );
   }
+
+  logHandlers.forEach((l) => l.setup());
 
   return new Logger(name, level, {
     handlers: logHandlers,
