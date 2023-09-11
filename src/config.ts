@@ -1,8 +1,18 @@
 import { z } from "zod/mod.ts";
 import merge from "lodash.merge";
 
+const logLevelSchema = z.enum([
+  "NOTSET",
+  "DEBUG",
+  "INFO",
+  "WARNING",
+  "ERROR",
+  "CRITICAL",
+]);
+
 const pluginConfigEntrySchema = z.object({
   id: z.string(),
+  logLevel: logLevelSchema.optional(),
   enabled: z.boolean().default(true),
   config: z.object({}).optional(),
 });
@@ -10,7 +20,7 @@ const pluginConfigEntrySchema = z.object({
 export type PluginConfigEntry = z.infer<typeof pluginConfigEntrySchema>;
 
 const ergomaticConfigSchema = z.object({
-  logLevel: z.enum(["NOTSET", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
+  logLevel: logLevelSchema,
   node: z.object({
     endpoint: z.string().url(),
   }),

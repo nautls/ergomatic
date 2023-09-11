@@ -49,7 +49,7 @@ export class Ergomatic extends Component<ErgomaticEvent> {
       return;
     }
 
-    this.logger.debug("Starting Ergomatic");
+    this.logger.info("Starting Ergomatic");
 
     const promises = this.#components.map(async (component) => {
       try {
@@ -73,7 +73,7 @@ export class Ergomatic extends Component<ErgomaticEvent> {
       return;
     }
 
-    this.logger.debug("Stopping Ergomatic");
+    this.logger.info("Stopping Ergomatic");
 
     const promises = this.#components.map(async (component) => {
       try {

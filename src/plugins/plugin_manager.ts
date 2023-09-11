@@ -108,23 +108,27 @@ export class PluginManager extends Component<PluginManagerEvent> {
   }
 
   #createPlugin(
-    config: ErgomaticConfig,
+    ergomaticConfig: ErgomaticConfig,
     pluginEntry: PluginConfigEntry,
   ): Plugin {
-    const pluginCtor = this.#pluginConstructorMap[pluginEntry.id];
+    const { id, logLevel } = pluginEntry;
+    const pluginCtor = this.#pluginConstructorMap[id];
 
     this.logger.debug(
       `Creating plugin from config: ${JSON.stringify(pluginEntry)}`,
     );
 
     if (!pluginCtor) {
-      throw new ErgomaticConfigError(`Unknown plugin ID: '${pluginEntry.id}'`);
+      throw new ErgomaticConfigError(`Unknown plugin ID: '${id}'`);
     }
 
     return new pluginCtor({
       config: pluginEntry.config,
       blockchainProvider: this.#blockchainProvider,
-      logger: createLogger(pluginEntry.id, config.logLevel),
+      logger: createLogger(
+        pluginEntry.id,
+        logLevel ?? ergomaticConfig.logLevel,
+      ),
     });
   }
 
