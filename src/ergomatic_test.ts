@@ -26,6 +26,7 @@ describe("Ergomatic", () => {
         assertSpyCalls(pluginManagerSpy, 1);
       } finally {
         pluginManagerSpy.restore();
+        await ergomatic.stop();
       }
     });
     it("should not call start() for components if already running", async () => {
@@ -39,6 +40,7 @@ describe("Ergomatic", () => {
         assertSpyCalls(pluginManagerSpy, 1);
       } finally {
         pluginManagerSpy.restore();
+        await ergomatic.stop();
       }
     });
     it("should raise an error event if a component throws an error", async () => {
@@ -62,6 +64,7 @@ describe("Ergomatic", () => {
       } finally {
         methodStub.restore();
         dispatchSpy.restore();
+        await ergomatic.stop();
       }
     });
   });
