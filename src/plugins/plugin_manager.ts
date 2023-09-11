@@ -108,7 +108,7 @@ export class PluginManager extends Component<PluginManagerEvent> {
   }
 
   #createPlugin(
-    config: ErgomaticConfig,
+    ergomaticConfig: ErgomaticConfig,
     pluginEntry: PluginConfigEntry,
   ): Plugin {
     const pluginCtor = this.#pluginConstructorMap[pluginEntry.id];
@@ -124,7 +124,10 @@ export class PluginManager extends Component<PluginManagerEvent> {
     return new pluginCtor({
       config: pluginEntry.config,
       blockchainProvider: this.#blockchainProvider,
-      logger: createLogger(pluginEntry.id, config.logLevel),
+      logger: createLogger(
+        pluginEntry.id,
+        pluginEntry.logLevel ?? ergomaticConfig.logLevel,
+      ),
     });
   }
 

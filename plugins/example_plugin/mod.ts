@@ -18,7 +18,7 @@ export class ExamplePlugin extends Plugin<ExamplePluginConfig> {
   }
 
   async onStart(): Promise<void> {
-    this.logger.info(
+    this.logger.debug(
       `Example plugin started with config: ${JSON.stringify(this.config)}`,
     );
 

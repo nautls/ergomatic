@@ -1,6 +1,7 @@
-logLevel: DEBUG
+logLevel: INFO
 plugins:
   - id: example_plugin
+    logLevel: DEBUG # this is optional, will fallback to top-level `logLevel` value if not defined
     enabled: true # defaults to true, can be set to false to disable plugin.
     config:
       tokenId: c7e22029868ecba3d43c385bb42b8a1c96d0114ad5261ec7e0d27a6f24254f92
