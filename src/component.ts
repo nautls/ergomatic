@@ -18,7 +18,7 @@ export abstract class Component<
 
     this.config = config;
     this.name = name;
-    this.logger = createLogger(this.name, config.logLevel);
+    this.logger = createLogger(`component::${this.name}`, config.logLevel);
   }
 
   start(): Promise<void> {

@@ -2,6 +2,7 @@ import { Block, SignedTransaction, TransactionId } from "@fleet-sdk/common";
 import { Component } from "../component.ts";
 import { ErgomaticConfig } from "../config.ts";
 import { BlockchainClient } from "./clients/mod.ts";
+import { isAxiosError } from "axios";
 
 export interface BlockchainSnapshot {
   height: number;
@@ -67,7 +68,9 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
       () =>
         this.#monitor().catch((e) =>
           this.logger.warning(
-            `${this.name} threw exception: ${e}, continuing execution`,
+            `exception was thrown: ${
+              this.#formatErrorText(e)
+            }\ncontinuing execution`,
           )
         ),
       this.#pollIntervalMs,
@@ -86,20 +89,20 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
   async #monitor() {
     this.logger.debug("Gathering blockchain state");
 
-    const { currentHeight, lastPeerMsgTimestamp } = await this.#blockchainClient
+    const { fullHeight, lastSeenMessageTime } = await this.#blockchainClient
       .getInfo();
 
     this.logger.debug(
-      `height: ${currentHeight}, last peer msg: ${lastPeerMsgTimestamp}`,
+      `height: ${fullHeight}, last peer msg: ${lastSeenMessageTime}`,
     );
 
-    if (lastPeerMsgTimestamp === this.#state.lastPeerMsgTimestamp) {
+    if (lastSeenMessageTime === this.#state.lastPeerMsgTimestamp) {
       this.logger.debug("no peer message since last poll");
 
       return;
     }
 
-    this.#state.lastPeerMsgTimestamp = lastPeerMsgTimestamp!;
+    this.#state.lastPeerMsgTimestamp = lastSeenMessageTime!;
 
     const mempool = [];
     // the loop following this where we go through all the mempool txs could
@@ -114,7 +117,7 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
     this.logger.debug(`${mempool.length} transactions in mempool`);
 
     const snapshot: Readonly<BlockchainSnapshot> = Object.freeze({
-      height: currentHeight,
+      height: fullHeight,
       mempool,
     });
 
@@ -166,13 +169,13 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
 
     this.#state.pastMempoolTxIds = mempool.map((tx) => tx.id);
 
-    if (currentHeight > this.#state.currentHeight) {
+    if (fullHeight > this.#state.currentHeight) {
       this.logger.debug(
-        `handling new height: ${currentHeight} > ${this.#state.currentHeight}`,
+        `handling new height: ${fullHeight} > ${this.#state.currentHeight}`,
       );
-      this.#handleNewHeight(currentHeight, snapshot);
+      await this.#handleNewHeight(fullHeight, snapshot);
 
-      this.#state.currentHeight = currentHeight;
+      this.#state.currentHeight = fullHeight;
     }
 
     for (const txState of Object.values(mempoolTxState)) {
@@ -254,5 +257,19 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
         );
       }
     }
+  }
+
+  #formatErrorText(e: Error): string {
+    let text = e.message;
+
+    if (isAxiosError(e) && e.response) {
+      const baseUrl = e.response.config!.baseURL ?? "";
+      const url = `${baseUrl}${e.response.config!.url!}`;
+
+      text += `\n request endpoint: ${url}`;
+      text += `\n response body: ${JSON.stringify(e.response.data)}`;
+    }
+
+    return text;
   }
 }

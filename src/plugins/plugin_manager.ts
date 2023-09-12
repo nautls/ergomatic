@@ -125,7 +125,7 @@ export class PluginManager extends Component<PluginManagerEvent> {
       config: pluginEntry.config,
       blockchainProvider: this.#blockchainProvider,
       logger: createLogger(
-        pluginEntry.id,
+        `plugin::${pluginEntry.id}`,
         pluginEntry.logLevel ?? ergomaticConfig.logLevel,
       ),
     });

@@ -27,7 +27,7 @@ export class NodeClient extends Component implements BlockchainClient {
 
   async getBlockIdsByHeight(height: number): Promise<BlockHeaderId[]> {
     const response = await this.#http.get(
-      `/headers/at/${height}`,
+      `/blocks/at/${height}`,
       this.#defaultRequestConfig,
     );
 
