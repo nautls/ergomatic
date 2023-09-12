@@ -26,8 +26,8 @@ export interface RestrictedBlockchainClient {
 }
 
 export interface BlockchainInfo {
-  currentHeight: number;
-  lastPeerMsgTimestamp?: number;
+  fullHeight: number;
+  lastSeenMessageTime?: number;
 }
 
 export interface BlockchainClient extends RestrictedBlockchainClient {
