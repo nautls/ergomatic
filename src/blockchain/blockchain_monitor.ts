@@ -20,7 +20,7 @@ interface MempoolTxState {
   tx: SignedTransaction;
 }
 
-interface MonitorState {
+export interface MonitorState {
   currentHeight: number;
   mempoolTxState: Record<TransactionId, MempoolTxState>;
   pastMempoolTxIds: TransactionId[];
@@ -47,7 +47,7 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
     config: ErgomaticConfig,
     blockchainClient: BlockchainClient,
     pollIntervalMs: number = 500,
-    maxMempoolTxChecks: number = 10,
+    maxMempoolTxChecks: number = 50,
   ) {
     super(config, "BlockchainMonitor");
 
@@ -121,7 +121,23 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
       mempool,
     });
 
-    const { mempoolTxState } = this.#state;
+    this.handleMempool(mempool, this.#state, snapshot);
+
+    if (fullHeight > this.#state.currentHeight) {
+      await this.handleNewHeight(fullHeight, this.#state, snapshot);
+    }
+
+    this.checkMempoolDrops(this.#state, snapshot);
+  }
+
+  handleMempool(
+    mempool: SignedTransaction[],
+    state: MonitorState,
+    currentSnapshot: Readonly<BlockchainSnapshot>,
+  ) {
+    this.logger.debug("handleMempool()");
+
+    const { mempoolTxState } = state;
 
     for (const tx of mempool) {
       this.logger.debug(`managing tx in mempool with id: ${tx.id}`);
@@ -137,16 +153,18 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
       }
 
       if (!mempoolTxState[tx.id].delivered) {
-        this.logger.debug(`delivering tx ${tx.id} to plugins`);
+        this.logger.debug(`delivering mempool tx ${tx.id} to plugins`);
 
         this.dispatchEvent(
-          new CustomEvent("monitor:mempool-tx", { detail: [tx, snapshot] }),
+          new CustomEvent("monitor:mempool-tx", {
+            detail: [tx, currentSnapshot],
+          }),
         );
 
         mempoolTxState[tx.id].delivered = true;
       }
 
-      this.#state.pastMempoolTxIds = this.#state.pastMempoolTxIds.filter((
+      state.pastMempoolTxIds = state.pastMempoolTxIds.filter((
         txId,
       ) => txId !== tx.id);
 
@@ -155,9 +173,11 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
       mempoolTxState[tx.id].dropChecks = 0;
     }
 
-    // if tx was present in previous mempool, but not in the
-    // current, it may have been dropped or included in a block
-    for (const txId of this.#state.pastMempoolTxIds) {
+    // increment drop checks for all txns in a previous mempool
+    // if the txn was in a previous mempool and also in the current
+    // mempool then the drop checks should have been reset to 0
+    // before this point
+    for (const txId of state.pastMempoolTxIds) {
       mempoolTxState[txId].dropChecks += 1;
 
       this.logger.debug(
@@ -167,19 +187,18 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
       );
     }
 
-    this.#state.pastMempoolTxIds = mempool.map((tx) => tx.id);
+    state.pastMempoolTxIds = mempool.map((tx) => tx.id);
+  }
 
-    if (fullHeight > this.#state.currentHeight) {
-      this.logger.debug(
-        `handling new height: ${fullHeight} > ${this.#state.currentHeight}`,
-      );
-      await this.#handleNewHeight(fullHeight, snapshot);
+  checkMempoolDrops(
+    state: MonitorState,
+    currentSnapshot: Readonly<BlockchainSnapshot>,
+  ) {
+    this.logger.debug("checkForMempoolDrops()");
 
-      this.#state.currentHeight = fullHeight;
-    }
-
-    for (const txState of Object.values(mempoolTxState)) {
+    for (const txState of Object.values(state.mempoolTxState)) {
       const txId = txState.tx.id;
+
       // if a tx is not included in a block in dropChecks * `n` seconds,
       // then it's probably dropped from the mempool
       if (txState.dropChecks > this.#maxMempoolTxChecks) {
@@ -189,26 +208,31 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
 
         this.dispatchEvent(
           new CustomEvent("monitor:mempool-tx-drop", {
-            detail: [txState.tx, snapshot],
+            detail: [txState.tx, currentSnapshot],
           }),
         );
-        delete mempoolTxState[txId];
+        delete state.mempoolTxState[txId];
       } else {
         txState.dropChecks += 1;
 
         this.logger.debug(
           `incremented drop checks for tx ${txId} to ${
-            mempoolTxState[txId].dropChecks
+            state.mempoolTxState[txId].dropChecks
           }`,
         );
       }
     }
   }
 
-  async #handleNewHeight(
+  async handleNewHeight(
     height: number,
+    state: MonitorState,
     currentSnapshot: Readonly<BlockchainSnapshot>,
   ): Promise<void> {
+    this.logger.debug(
+      `handling new height: ${height} > ${state.currentHeight}`,
+    );
+
     const blockIds = await this.#blockchainClient.getBlockIdsByHeight(height);
 
     this.logger.debug(`new block ids: ${blockIds.join(",")}, fetching blocks`);
@@ -233,29 +257,39 @@ export class BlockchainMonitor extends Component<BlockchainMonitorEvent> {
         continue;
       }
 
+      this.handleNewBlock(block, state, currentSnapshot);
+    }
+
+    state.currentHeight = height;
+  }
+
+  handleNewBlock(
+    block: Block,
+    state: MonitorState,
+    currentSnapshot: Readonly<BlockchainSnapshot>,
+  ) {
+    this.dispatchEvent(
+      new CustomEvent("monitor:new-block", {
+        detail: [block, currentSnapshot],
+      }),
+    );
+
+    this.logger.debug(
+      `block ${block.header.id} has ${block.blockTransactions.transactions.length} transactions`,
+    );
+
+    for (const tx of Object.values(block.blockTransactions.transactions)) {
       this.dispatchEvent(
-        new CustomEvent("monitor:new-block", {
-          detail: [block, currentSnapshot],
+        new CustomEvent("monitor:included-tx", {
+          detail: [tx, currentSnapshot],
         }),
       );
 
+      // stop tracking delivery and drop checks for this txid
+      delete state.mempoolTxState[tx.id];
       this.logger.debug(
-        `block ${block.header.id} has ${block.blockTransactions.transactions.length} transactions`,
+        `mempool tx removed from state tracking as it was included in block: ${tx.id}`,
       );
-
-      for (const tx of Object.values(block.blockTransactions.transactions)) {
-        this.dispatchEvent(
-          new CustomEvent("monitor:included-tx", {
-            detail: [tx, currentSnapshot],
-          }),
-        );
-
-        // stop tracking delivery and drop checks for this txid
-        delete this.#state.mempoolTxState[tx.id];
-        this.logger.debug(
-          `mempool tx removed from state tracking as it was included in block: ${tx.id}`,
-        );
-      }
     }
   }
 

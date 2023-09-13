@@ -59,7 +59,9 @@ async function runHandler({ config }: RunArgs) {
 }
 
 async function onExit() {
-  await _ergomatic?.stop();
+  if (_ergomatic?.isRunning) {
+    await _ergomatic.stop();
+  }
 }
 
 globalThis.addEventListener("unload", onExit);
