@@ -90,6 +90,10 @@ export class Ergomatic extends Component<ErgomaticEvent> {
     this.#isRunning = false;
   }
 
+  get isRunning(): boolean {
+    return this.#isRunning;
+  }
+
   #onComponentError(component: Component, error: Error) {
     this.logger.debug(`Component ${component.name} raised exception: ${error}`);
 
