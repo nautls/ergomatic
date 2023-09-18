@@ -1,6 +1,7 @@
 import { Logger } from "std/log/mod.ts";
 import { BlockchainProvider, BlockchainSnapshot } from "../blockchain/mod.ts";
 import { Block, SignedTransaction } from "@fleet-sdk/common";
+import { z } from "zod/mod.ts";
 
 export interface PluginDescriptor {
   /** User friendly name of the plugin. */
@@ -63,7 +64,7 @@ export abstract class Plugin<T = unknown> {
     return Promise.resolve();
   }
 
-  /** Called when a transaction is dropped from mempool. */
+  /** Called when a transaction is dropped from mempool without being included in a block. */
   onMempoolTxDrop(
     _tx: SignedTransaction,
     _snapshot: Readonly<BlockchainSnapshot>,
@@ -85,6 +86,39 @@ export abstract class Plugin<T = unknown> {
     _snapshot: Readonly<BlockchainSnapshot>,
   ): Promise<void> {
     return Promise.resolve();
+  }
+
+  /**
+   * The `configSchema` is used to validate the user supplied configuration
+   * in the `ergomatic` config file. The schema is applied to the {@link T} type.
+   *
+   * LSPs auto-complete the function signature for this function to be a complex
+   * ZodObject<..> return type, you can safely use `z.ZodObject<any>` like below to simplify it.
+   *
+   * @example
+   * ```ts
+   *   // deno-lint-ignore no-explicit-any
+   * configSchema(): z.ZodObject<any> | undefined {
+   *   return z.object({
+   *     tokenId: z.string(),
+   *     exitAtPage: z.number().optional(),
+   *   });
+   * }
+   * ```
+   *
+   * @returns Zod schema if the config should be validated by
+   * `ergomatic` otherwise `undefined`.
+   */
+  // deno-lint-ignore no-explicit-any
+  configSchema(): z.ZodObject<any> | undefined {
+    return;
+  }
+
+  /**
+   * @throws {ZodError} If the config doesn't pass the schema provided by {@link configSchema}.
+   */
+  validateConfig(): void {
+    this.configSchema()?.parse(this.config);
   }
 
   abstract get descriptor(): PluginDescriptor;

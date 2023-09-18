@@ -43,12 +43,12 @@ export class PluginManager extends Component<PluginManagerEvent> {
 
     this.#blockchainProvider = blockchainProvider;
     this.#pluginConstructorMap = pluginCtorMap;
-    this.#_plugins = config.plugins.filter((p) => p.enabled).map((
-      pluginEntry,
-    ) => ({
-      plugin: this.#createPlugin(config, pluginEntry),
-      state: PluginState.Stopped,
-    }));
+    this.#_plugins = config.plugins
+      .filter((p) => p.enabled)
+      .map((pluginEntry) => ({
+        plugin: this.#createPlugin(config, pluginEntry),
+        state: PluginState.Stopped,
+      }));
 
     this.#setupEventHandlers(blockchainMonitor);
   }
@@ -56,17 +56,18 @@ export class PluginManager extends Component<PluginManagerEvent> {
   public async start(): Promise<void> {
     this.logger.debug("Starting plugins");
 
-    const promises = this.#pluginsByState(PluginState.Stopped).map(async (
-      managedPlugin,
-    ) => {
-      try {
-        await managedPlugin.plugin.onStart();
+    const promises = this.#pluginsByState(PluginState.Stopped).map(
+      async (managedPlugin) => {
+        try {
+          managedPlugin.plugin.validateConfig();
+          await managedPlugin.plugin.onStart();
 
-        managedPlugin.state = PluginState.Running;
-      } catch (e) {
-        this.#handlePluginError(managedPlugin, e);
-      }
-    });
+          managedPlugin.state = PluginState.Running;
+        } catch (e) {
+          this.#handlePluginError(managedPlugin, e);
+        }
+      },
+    );
 
     await Promise.allSettled(promises);
   }
@@ -74,17 +75,17 @@ export class PluginManager extends Component<PluginManagerEvent> {
   public async stop(): Promise<void> {
     this.logger.debug("Stopping plugins");
 
-    const promises = this.#pluginsByState(PluginState.Running).map(async (
-      managedPlugin,
-    ) => {
-      try {
-        await managedPlugin.plugin.onStop();
+    const promises = this.#pluginsByState(PluginState.Running).map(
+      async (managedPlugin) => {
+        try {
+          await managedPlugin.plugin.onStop();
 
-        managedPlugin.state = PluginState.Stopped;
-      } catch (e) {
-        this.#handlePluginError(managedPlugin, e);
-      }
-    });
+          managedPlugin.state = PluginState.Stopped;
+        } catch (e) {
+          this.#handlePluginError(managedPlugin, e);
+        }
+      },
+    );
 
     await Promise.allSettled(promises);
   }
@@ -136,36 +137,36 @@ export class PluginManager extends Component<PluginManagerEvent> {
       "monitor:mempool-tx",
       ({ detail }) =>
         this.#pluginsByState(PluginState.Running).forEach((p) =>
-          p.plugin.onMempoolTx(...detail).catch((e) =>
-            this.#handlePluginError(p, e)
-          )
+          p.plugin
+            .onMempoolTx(...detail)
+            .catch((e) => this.#handlePluginError(p, e))
         ),
     );
     blockchainMonitor.addEventListener(
       "monitor:mempool-tx-drop",
       ({ detail }) =>
         this.#pluginsByState(PluginState.Running).forEach((p) =>
-          p.plugin.onMempoolTxDrop(...detail).catch((e) =>
-            this.#handlePluginError(p, e)
-          )
+          p.plugin
+            .onMempoolTxDrop(...detail)
+            .catch((e) => this.#handlePluginError(p, e))
         ),
     );
     blockchainMonitor.addEventListener(
       "monitor:included-tx",
       ({ detail }) =>
         this.#pluginsByState(PluginState.Running).forEach((p) =>
-          p.plugin.onIncludedTx(...detail).catch((e) =>
-            this.#handlePluginError(p, e)
-          )
+          p.plugin
+            .onIncludedTx(...detail)
+            .catch((e) => this.#handlePluginError(p, e))
         ),
     );
     blockchainMonitor.addEventListener(
       "monitor:new-block",
       ({ detail }) =>
         this.#pluginsByState(PluginState.Running).forEach((p) =>
-          p.plugin.onNewBlock(...detail).catch((e) =>
-            this.#handlePluginError(p, e)
-          )
+          p.plugin
+            .onNewBlock(...detail)
+            .catch((e) => this.#handlePluginError(p, e))
         ),
     );
   }

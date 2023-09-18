@@ -55,6 +55,19 @@ async function runHandler({ config }: RunArgs) {
   const ergomaticConfig = mergeUserConfigAndValidate(userConfig);
 
   _ergomatic = new Ergomatic({ config: ergomaticConfig });
+
+  // TODO: more robust handling
+  _ergomatic.addEventListener("plugin:error", (e) => {
+    console.error(`Plugin error: ${e.detail.plugin.descriptor.name}`);
+    console.error(e.detail.error);
+  });
+
+  // TODO: more robust handling
+  _ergomatic.addEventListener("component:error", (e) => {
+    console.error(`Component error: ${e.detail.component.name}`);
+    console.error(e.detail.error);
+  });
+
   _ergomatic.start();
 }
 
@@ -71,16 +84,20 @@ Deno.addSignalListener("SIGINT", onExit);
  * Setting `scriptName` is required to show correct CLI name in `yargs` output.
  * Without it `yargs` shows the app name as `deno`.
  */
-yargs(Deno.args).scriptName(getScriptName()).command(
-  "run",
-  "Start running ergomatic",
-  // deno-lint-ignore no-explicit-any
-  function (yargs: any) {
-    return yargs.option("config", {
-      alias: "c",
-      default: "ergomatic.yaml",
-      describe: "Path to your ergomatic configuration file.",
-    });
-  },
-  runHandler,
-).version(`ergomatic ${version} (${Deno.build.target})`).parse();
+yargs(Deno.args)
+  .scriptName(getScriptName())
+  .command(
+    "run",
+    "Start running ergomatic",
+    // deno-lint-ignore no-explicit-any
+    function (yargs: any) {
+      return yargs.option("config", {
+        alias: "c",
+        default: "ergomatic.yaml",
+        describe: "Path to your ergomatic configuration file.",
+      });
+    },
+    runHandler,
+  )
+  .version(`ergomatic ${version} (${Deno.build.target})`)
+  .parse();
