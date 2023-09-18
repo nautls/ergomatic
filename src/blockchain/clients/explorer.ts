@@ -11,6 +11,7 @@ import axios, { AxiosInstance } from "axios";
 import { BlockchainClient, BlockchainInfo } from "./blockchain_client.ts";
 import { ErgomaticConfig } from "../../config.ts";
 import { Component } from "../../component.ts";
+import { ERGOMATIC_USER_AGENT } from "../../http.ts";
 
 export class ExplorerClient extends Component implements BlockchainClient {
   readonly #http: AxiosInstance;
@@ -26,6 +27,9 @@ export class ExplorerClient extends Component implements BlockchainClient {
     this.#http = axios.create({
       // let URL handle any possible trailing slash,etc in the configured endpoint.
       baseURL: new URL("/api/v1", config.explorer.endpoint).href,
+      headers: {
+        "User-Agent": ERGOMATIC_USER_AGENT,
+      },
     });
   }
 
