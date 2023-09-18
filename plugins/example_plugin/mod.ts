@@ -1,4 +1,5 @@
 import { Plugin, PluginDescriptor } from "../../src/plugins/mod.ts";
+import { z } from "zod/mod.ts";
 
 export const EXAMPLE_PLUGIN_ID = "example_plugin";
 
@@ -26,13 +27,13 @@ export class ExamplePlugin extends Plugin<ExamplePluginConfig> {
     let currentPage = 0;
 
     for await (
-      const page of this.blockchainProvider.getBoxesByTokenId(tokenId)
+      const page of this.blockchainProvider.getBoxesByTokenId(
+        tokenId,
+      )
     ) {
       currentPage++;
 
-      this.logger.info(
-        `Got page ${currentPage} of boxes for token ${tokenId}`,
-      );
+      this.logger.info(`Got page ${currentPage} of boxes for token ${tokenId}`);
 
       this.logger.info(`there was ${page.length} boxes in this page`);
 
@@ -44,5 +45,13 @@ export class ExamplePlugin extends Plugin<ExamplePluginConfig> {
         break;
       }
     }
+  }
+
+  // deno-lint-ignore no-explicit-any
+  configSchema(): z.ZodObject<any> | undefined {
+    return z.object({
+      tokenId: z.string(),
+      exitAtPage: z.number(),
+    });
   }
 }
