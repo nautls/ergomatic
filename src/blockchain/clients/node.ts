@@ -11,6 +11,7 @@ import { BlockchainClient, BlockchainInfo } from "./blockchain_client.ts";
 import { Component } from "../../component.ts";
 import { ErgomaticConfig } from "../../config.ts";
 import axios, { AxiosInstance } from "axios";
+import { ERGOMATIC_USER_AGENT } from "../../http.ts";
 
 export class NodeClient extends Component implements BlockchainClient {
   readonly #http: AxiosInstance;
@@ -22,6 +23,9 @@ export class NodeClient extends Component implements BlockchainClient {
     this.#timeoutMs = httpTimeoutMs;
     this.#http = axios.create({
       baseURL: config.node.endpoint,
+      headers: {
+        "User-Agent": ERGOMATIC_USER_AGENT,
+      },
     });
   }
 
@@ -44,17 +48,12 @@ export class NodeClient extends Component implements BlockchainClient {
   }
 
   async getInfo(): Promise<BlockchainInfo> {
-    const response = await this.#http.get(
-      "/info",
-      this.#defaultRequestConfig,
-    );
+    const response = await this.#http.get("/info", this.#defaultRequestConfig);
 
     return response.data;
   }
 
-  async submitTx(
-    signedTx: SignedTransaction,
-  ): Promise<TransactionId> {
+  async submitTx(signedTx: SignedTransaction): Promise<TransactionId> {
     const response = await this.#http.post(
       "/transactions",
       signedTx,
