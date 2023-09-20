@@ -20,7 +20,7 @@ if (!($ErgomaticVersion -like '*0.0.1*')) {
 # Test that we can install at a relative custom location.
 Remove-Item "bin" -Recurse -Force -ErrorAction SilentlyContinue
 $env:ERGOMATIC_INSTALL = "."
-$v = "0.0.1"; .\install.ps1
+$v = "0.0.1"; .\scripts\install\install.ps1
 $ErgomaticVersion = bin\ergomatic.exe --version
 if (!($ErgomaticVersion -like '*0.0.1*')) {
   throw $ErgomaticVersion
