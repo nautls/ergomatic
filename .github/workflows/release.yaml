@@ -1,0 +1,51 @@
+name: release
+
+on:
+  # automatically run on pushes to main with a changed `version.ts` file
+  push:
+    branches:
+      - main
+    paths:
+      - src/version.ts
+  # allow for manual trigger
+  workflow_dispatch:
+
+jobs:
+  compile:
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-gnu, x86_64-pc-windows-msvc, x86_64-apple-darwin, aarch64-apple-darwin]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - name: Compile all targets
+        run: deno compile -A --output bin/ergomatic-${{ matrix.target }} --target ${{ matrix.target }} src/cli.ts 
+      - uses: actions/upload-artifact@v3
+        with:
+          name: release-artifacts
+          path: bin/*
+  release:
+    needs: [compile]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v3
+        with:
+          name: release-artifacts
+          path: bin
+      - name: Get version
+        id: version
+        run: |
+          echo "::set-output name=version::$(grep -o -P '([0-9]+\.[0-9]+\.[0-9]+)' src/version.ts)"
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: bin/*
+          commit: main
+          tag: v${{ steps.version.outputs.version }}
+          body: "Release version ${{ steps.version.outputs.version }}"
+
