@@ -1,11 +1,7 @@
 #!/bin/sh
+# Inspired by https://github.com/denoland/deno_install
 
 set -e
-
-if ! command -v unzip >/dev/null; then
-	echo "Error: unzip is required to install Ergomatic" 1>&2
-	exit 1
-fi
 
 if [ "$OS" = "Windows_NT" ]; then
 	target="x86_64-pc-windows-msvc"
@@ -21,10 +17,16 @@ else
 	esac
 fi
 
-if [ $# -eq 0 ]; then
-	ergomatic_uri="https://github.com/nautls/ergomatic/releases/latest/download/ergomatic-${target}.zip"
+if [ "$OS" = "Windows_NT" ]; then
+  ext=".exe"
 else
-	ergomatic_uri="https://github.com/nautls/ergomatic/releases/download/${1}/ergomatic-${target}.zip"
+  ext=""
+fi
+
+if [ $# -eq 0 ]; then
+	ergomatic_uri="https://github.com/nautls/ergomatic/releases/latest/download/ergomatic-${target}${ext}"
+else
+	ergomatic_uri="https://github.com/nautls/ergomatic/releases/download/${1}/ergomatic-${target}${ext}"
 fi
 
 ergomatic_install="${ERGOMATIC_INSTALL:-$HOME/.ergomatic}"
@@ -35,10 +37,8 @@ if [ ! -d "$bin_dir" ]; then
 	mkdir -p "$bin_dir"
 fi
 
-curl --fail --location --progress-bar --output "$exe.zip" "$ergomatic_uri"
-unzip -d "$bin_dir" -o "$exe.zip"
+curl --fail --location --progress-bar --output "$exe" "$ergomatic_uri"
 chmod +x "$exe"
-rm "$exe.zip"
 
 echo "Ergomatic was installed successfully to $exe"
 if command -v ergomatic >/dev/null; then
