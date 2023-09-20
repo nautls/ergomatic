@@ -1,0 +1,29 @@
+# test that install scripts work on all operating systems
+# currently only triggered manually, could be added to the main `ci.yaml`
+# and use a filter to only run jobs if any scripts under `./scripts/install`
+# have been modified.
+name: install_ci
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: tests shell
+        shell: bash
+        run: ./scripts/install/install_test.sh
+      - name: tests powershell
+        if: matrix.os == 'windows-latest'
+        shell: powershell
+        run: ./scripts/install/install_test.ps1
+      - name: tests powershell core
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: ./scripts/install/install_test.ps1
