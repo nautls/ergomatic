@@ -1,8 +1,10 @@
 # Ergomatic
 
-[![ci](https://github.com/nautls/ergomatic/actions/workflows/ci.yaml/badge.svg)](https://github.com/nautls/ergomatic/actions/workflows/ci.yaml)[![Discord badge][]][Discord link]
+[![ci](https://github.com/nautls/ergomatic/actions/workflows/ci.yaml/badge.svg)](https://github.com/nautls/ergomatic/actions/workflows/ci.yaml)
+[![Discord badge][]][Discord link]
 
-`ergomatic` is a generic off-chain execution framework for bots. Bot functionality is provided via plugins which are audited by the nautilus team.
+`ergomatic` is a generic off-chain execution framework for bots. Bot
+functionality is provided via plugins which are audited by the nautilus team.
 
 ## Install
 
@@ -20,13 +22,16 @@ irm https://raw.githubusercontent.com/nautls/ergomatic/main/scripts/install/inst
 
 ### Running
 
-Ergomatic can be ran using the `run` CLI command. The `-c` flag can optionally be passed to specify the config file path, if not provided it will default to `$CWD/ergomatic.yaml`.
+Ergomatic can be ran using the `run` CLI command. The `-c` flag can optionally
+be passed to specify the config file path, if not provided it will default to
+`$CWD/ergomatic.yaml`.
 
 ```sh
 ergomatic run
 ```
 
-Logs can be viewed in your terminal and are also persisted to disk depending on OS:
+Logs can be viewed in your terminal and are also persisted to disk depending on
+OS:
 
 - Linux: `$XDG_DATA_HOME/ergomatic`
 - macOS: `$HOME/Library/Application Support/ergomatic`
